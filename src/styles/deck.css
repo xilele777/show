@@ -1,0 +1,425 @@
+/* ---------- 3D Interactive Poster Flip Deck ---------- */
+.poster-stage {
+  position: relative;
+  padding: 6px 0 4px;
+  outline: none;
+}
+
+.stage-poster-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.stage-poster-glow img {
+  grid-area: 1 / 1;
+  width: min(86vw, 900px);
+  height: min(80vh, 760px);
+  object-fit: cover;
+  filter: blur(110px) saturate(1.55);
+  opacity: 0.2;
+  transform: scale(1.15) translateZ(0);
+  will-change: opacity;
+}
+
+:root[data-theme='dark'] .stage-poster-glow img {
+  opacity: 0.28;
+}
+
+.glow-fade-enter-active,
+.glow-fade-leave-active {
+  transition: opacity 0.9s ease;
+}
+.glow-fade-enter-from,
+.glow-fade-leave-to {
+  opacity: 0 !important;
+}
+
+.poster-deck {
+  position: relative;
+  height: clamp(325px, 45vh, 440px);
+  display: grid;
+  place-items: center;
+  perspective: 1400px;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  z-index: 2;
+}
+
+.poster-deck:not(.is-dragging) .poster-card {
+  cursor: pointer;
+}
+
+.poster-deck.is-dragging,
+.poster-deck.is-dragging .poster-card {
+  cursor: grabbing;
+}
+
+.poster-card {
+  position: absolute;
+  height: clamp(300px, 42vh, 410px);
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #141418;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  backface-visibility: hidden;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.45s ease;
+  will-change: transform, opacity;
+}
+
+.poster-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: #000;
+  opacity: var(--shade, 0);
+}
+
+.poster-card.is-active {
+  border-color: rgb(255 255 255 / 0.32);
+}
+
+.poster-card.is-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    360px circle at var(--mx, 50%) var(--my, 35%),
+    rgb(255 255 255 / 0.2),
+    transparent 62%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.poster-card.is-active:hover::before {
+  opacity: 1;
+}
+
+.poster-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.poster-fallback {
+  width: 100%;
+  height: 100%;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  text-align: left;
+  background: linear-gradient(155deg, #27272e 0%, #111115 100%);
+  color: #fafafa;
+}
+
+.poster-fallback span {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.poster-fallback strong {
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.poster-pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(9 9 11 / 0.62);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  color: #fafafa;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.poster-open-pill {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgb(9 9 11 / 0.68);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.35s var(--ease-out-expo),
+    background-color 0.2s ease;
+}
+
+.poster-card.is-active:hover .poster-open-pill,
+.poster-card.is-active:focus-visible .poster-open-pill {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+.poster-card.is-active:hover .poster-open-pill {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.deck-nav {
+  position: absolute;
+  top: calc(clamp(325px, 45vh, 440px) / 2);
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  touch-action: manipulation;
+}
+
+.deck-nav:hover:not(:disabled) {
+  transform: translateY(-50%) scale(1.08);
+}
+
+.deck-nav--prev {
+  left: 8px;
+}
+
+.deck-nav--next {
+  right: 8px;
+}
+
+/* Floating Active Poster Typography */
+.poster-caption-stack {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  margin: 12px auto 0;
+  max-width: 680px;
+}
+
+.poster-caption {
+  grid-area: 1 / 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.poster-caption-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.poster-caption-meta time {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.poster-caption-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-sep {
+  opacity: 0.4;
+}
+
+.poster-title-btn {
+  padding: 2px 10px;
+  border-radius: 10px;
+  transition: color 0.2s ease, transform 0.25s var(--ease-out-expo);
+}
+
+.poster-title-btn h2 {
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: 700;
+  line-height: 1.28;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  transition: color 0.2s ease;
+}
+
+.poster-title-btn:hover h2 {
+  color: var(--accent);
+}
+
+.poster-caption-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.poster-counter {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+}
+
+.caption-swap-enter-active {
+  transition:
+    opacity 0.32s ease 0.06s,
+    transform 0.46s var(--ease-out-expo) 0.04s,
+    filter 0.32s ease 0.04s;
+}
+.caption-swap-leave-active {
+  transition:
+    opacity 0.16s ease,
+    transform 0.22s ease-in,
+    filter 0.16s ease;
+  pointer-events: none;
+}
+.caption-swap-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+  filter: blur(4px);
+}
+.caption-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+  filter: blur(3px);
+}
+
+/* Mini-Poster Thumbnail Rail */
+.poster-rail {
+  position: relative;
+  z-index: 3;
+  margin: 14px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: safe center;
+  gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 6px 12px 12px;
+  scrollbar-width: none;
+}
+
+.poster-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail-indicator {
+  position: absolute;
+  left: -8px;
+  bottom: 2px;
+  width: 16px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.5s var(--ease-out-expo),
+    opacity 0.3s ease;
+}
+
+.rail-indicator.ready {
+  opacity: 1;
+}
+
+.rail-thumb {
+  flex: none;
+  width: 34px;
+  height: 51px;
+  padding: 2px;
+  border-radius: 7px;
+  border: 2px solid transparent;
+  opacity: 0.48;
+  transition:
+    opacity 0.25s ease,
+    transform 0.4s var(--ease-out-expo),
+    border-color 0.25s ease;
+}
+
+.rail-thumb:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+.rail-thumb.active {
+  opacity: 1;
+  border-color: var(--accent);
+  transform: translateY(-3px) scale(1.1);
+}
+
+.rail-thumb img,
+.rail-thumb-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+  display: block;
+}
+
+.rail-thumb-fallback {
+  background: var(--surface-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caption-swap-enter-active,
+  .caption-swap-leave-active,
+  .glow-fade-enter-active,
+  .glow-fade-leave-active,
+  .rail-indicator {
+    transition-duration: 0.12s;
+    transition-delay: 0s;
+  }
+  .caption-swap-enter-from,
+  .caption-swap-leave-to {
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .poster-deck {
+    height: clamp(320px, 50vh, 410px);
+  }
+  .poster-card {
+    height: clamp(290px, 46vh, 380px);
+  }
+  .deck-nav {
+    display: none;
+  }
+}
