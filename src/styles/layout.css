@@ -41,58 +41,47 @@
   }
 }
 
-/* ---------- Sticky Glass Header ---------- */
-.site-header {
-  position: sticky;
+/* ---------- Floating Corner HUD (Headerless Immersive Chrome) ---------- */
+.floating-hud {
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 40;
-  padding: 12px 0 8px;
-}
-
-.header-capsule {
-  width: min(1240px, calc(100% - 48px));
-  margin-inline: auto;
-  height: 56px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--glass);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  position: relative;
-  transition:
-    box-shadow 0.28s var(--ease-out-expo),
-    border-color 0.25s ease,
-    background-color 0.25s ease;
-}
-
-.site-header.is-scrolled .header-capsule {
-  border-color: var(--line-strong);
-  box-shadow: var(--shadow-md);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
   gap: 12px;
-  min-width: 0;
+  padding: 18px 24px;
+  pointer-events: none;
+  transition: transform 0.34s var(--ease-out-expo), opacity 0.26s ease;
 }
 
-.brand {
+.floating-hud.is-hidden:not(:focus-within) {
+  transform: translateY(-120%);
+  opacity: 0;
+}
+
+.floating-brand {
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 999px;
   min-width: 0;
+  opacity: 0.88;
+  transition: opacity 0.2s ease, transform 0.25s var(--ease-out-expo);
+}
+
+.floating-brand:hover {
+  opacity: 1;
+  transform: translateY(-1px);
 }
 
 .brand-mark {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), var(--glow));
   color: #fff;
@@ -102,88 +91,72 @@
   box-shadow: 0 4px 14px var(--accent-soft);
 }
 
-.brand-titles {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-}
-
 .brand-cn {
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 600;
   letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
-.brand-en {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.header-actions {
-  display: flex;
+.floating-actions {
+  pointer-events: auto;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   flex-shrink: 0;
 }
 
-.header-tally {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  margin-right: 4px;
-  font-variant-numeric: tabular-nums;
-}
-
-.header-tally b {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.header-icon-btn {
-  width: 36px;
-  height: 36px;
-  background: var(--surface);
-}
-
-/* ---------- Banners ---------- */
-.draft-banner {
-  width: min(1240px, calc(100% - 48px));
-  margin: 4px auto 0;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
-  color: var(--ink);
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  position: relative;
-  z-index: 2;
-}
-
-.draft-banner a {
+.hud-slot {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
+}
+
+.hud-slot:empty {
+  display: none;
+}
+
+.hud-icon-btn {
+  width: 34px;
+  height: 34px;
+  background: var(--glass);
+  border-color: var(--line);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+
+/* ---------- Floating Draft Preview Pill & Status Banner ---------- */
+.draft-pill {
+  position: fixed;
+  left: 24px;
+  bottom: 20px;
+  z-index: 35;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.draft-pill a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   color: var(--accent);
   font-weight: 600;
 }
 
 .status-banner {
   width: min(1240px, calc(100% - 48px));
-  margin: 16px auto;
+  margin: 76px auto 16px;
   padding: 12px 18px;
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -353,16 +326,14 @@
 }
 
 @media (max-width: 720px) {
-  .header-capsule,
-  .draft-banner,
+  .floating-hud {
+    padding: 14px 14px;
+  }
+  .draft-pill {
+    left: 14px;
+    bottom: 14px;
+  }
   .status-banner {
     width: calc(100% - 28px);
-  }
-  .header-capsule {
-    padding: 0 12px;
-  }
-  .brand-en,
-  .header-tally {
-    display: none;
   }
 }

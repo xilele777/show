@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   AudioLines,
@@ -33,44 +33,13 @@ const themeLabel = computed(() =>
 )
 
 const isScrolled = ref(false)
+const hudHidden = ref(false)
 const scrollProgress = ref(0)
 const supportsScrollTimeline =
   typeof CSS !== 'undefined' &&
   CSS.supports?.('(animation-timeline: scroll()) and (animation-range: 0% 100%)')
 
-// Compact live tally in header
-const targetCounts = computed(() => ({
-  shows: visibleRecords.value.length,
-  cities: new Set(visibleRecords.value.map((r) => r.city)).size
-}))
-const animatedCounts = ref({ shows: 0, cities: 0 })
-let countFrame = 0
-
-function animateCounts() {
-  cancelAnimationFrame(countFrame)
-  const target = targetCounts.value
-  if (
-    typeof window === 'undefined' ||
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  ) {
-    animatedCounts.value = { ...target }
-    return
-  }
-  const duration = 650
-  const start = performance.now()
-  const step = (now: number) => {
-    const t = Math.min(1, (now - start) / duration)
-    const eased = 1 - Math.pow(1 - t, 3)
-    animatedCounts.value = {
-      shows: Math.round(target.shows * eased),
-      cities: Math.round(target.cities * eased)
-    }
-    if (t < 1) countFrame = requestAnimationFrame(step)
-  }
-  countFrame = requestAnimationFrame(step)
-}
-
-watch(targetCounts, animateCounts, { immediate: true })
+let lastScrollY = 0
 
 // About modal
 const aboutDialog = ref<HTMLDialogElement>()
@@ -105,10 +74,18 @@ function changeTheme() {
 }
 
 function handleScroll() {
-  const y = window.scrollY
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+  const y = Math.max(0, Math.min(window.scrollY, maxScroll))
   isScrolled.value = isScrolled.value ? y > 8 : y > 28
+  if (y <= 32) {
+    hudHidden.value = false
+  } else if (y > lastScrollY + 4 && y > 72) {
+    hudHidden.value = true
+  } else if (y < lastScrollY - 4) {
+    hudHidden.value = false
+  }
+  lastScrollY = y
   if (!supportsScrollTimeline) {
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight
     scrollProgress.value = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0
   }
 }
@@ -143,7 +120,6 @@ onMounted(() => {
 onUnmounted(() => {
   media.removeEventListener('change', applyTheme)
   window.removeEventListener('scroll', handleScroll)
-  cancelAnimationFrame(countFrame)
   cleanupAboutDismiss?.()
 })
 </script>
@@ -163,70 +139,60 @@ onUnmounted(() => {
     aria-hidden="true"
   />
 
-  <header class="site-header" :class="{ 'is-scrolled': isScrolled }">
-    <div class="header-capsule">
-      <div class="header-left">
-        <RouterLink to="/" class="brand" aria-label="余响，返回首页">
-          <span class="brand-mark"><AudioLines :size="17" :stroke-width="1.8" /></span>
-          <span class="brand-titles">
-            <span class="brand-cn">{{ archive?.settings.name || '余响' }}</span>
-            <span class="brand-en">{{ archive?.settings.englishName || 'AFTERGLOW' }}</span>
-          </span>
-        </RouterLink>
-      </div>
+  <header class="floating-hud" :class="{ 'is-hidden': hudHidden }">
+    <RouterLink to="/" class="floating-brand" aria-label="余响，返回首页">
+      <span class="brand-mark"><AudioLines :size="15" :stroke-width="1.9" /></span>
+      <span class="brand-cn">{{ archive?.settings.name || '余响' }}</span>
+    </RouterLink>
 
-      <div class="header-actions">
-        <span v-if="archive && visibleRecords.length" class="header-tally" aria-label="观演统计">
-          <b>{{ String(animatedCounts.shows).padStart(2, '0') }}</b> 场 ·
-          <b>{{ String(animatedCounts.cities).padStart(2, '0') }}</b> 城
-        </span>
+    <div class="floating-actions">
+      <div id="hud-slot" class="hud-slot" />
 
-        <button
-          v-if="archive"
-          type="button"
-          class="icon-button header-icon-btn"
-          aria-label="关于这本档案"
-          title="关于"
-          @click="openAbout"
-        >
-          <Disc3 :size="16" />
-        </button>
+      <button
+        v-if="archive"
+        type="button"
+        class="icon-button hud-icon-btn"
+        aria-label="关于这本档案"
+        title="关于"
+        @click="openAbout"
+      >
+        <Disc3 :size="15" />
+      </button>
 
-        <button
-          type="button"
-          class="icon-button header-icon-btn"
-          :aria-label="`${themeLabel}，点击切换主题`"
-          :title="themeLabel"
-          @click="changeTheme"
-        >
-          <Sun v-if="theme === 'light'" :size="16" />
-          <Moon v-else-if="theme === 'dark'" :size="16" />
-          <Monitor v-else :size="16" />
-        </button>
+      <button
+        type="button"
+        class="icon-button hud-icon-btn"
+        :aria-label="`${themeLabel}，点击切换主题`"
+        :title="themeLabel"
+        @click="changeTheme"
+      >
+        <Sun v-if="theme === 'light'" :size="15" />
+        <Moon v-else-if="theme === 'dark'" :size="15" />
+        <Monitor v-else :size="15" />
+      </button>
 
-        <RouterLink
-          v-if="route.path === '/admin'"
-          to="/"
-          class="icon-button header-icon-btn"
-          aria-label="返回首页"
-          title="返回首页"
-        >
-          <HomeIcon :size="16" />
-        </RouterLink>
-        <RouterLink
-          v-else
-          to="/admin"
-          class="icon-button header-icon-btn"
-          aria-label="管理记录"
-          title="管理记录"
-        >
-          <SlidersHorizontal :size="15" />
-        </RouterLink>
-      </div>
+      <RouterLink
+        v-if="route.path === '/admin'"
+        to="/"
+        class="icon-button hud-icon-btn"
+        aria-label="返回首页"
+        title="返回首页"
+      >
+        <HomeIcon :size="15" />
+      </RouterLink>
+      <RouterLink
+        v-else
+        to="/admin"
+        class="icon-button hud-icon-btn"
+        aria-label="管理记录"
+        title="管理记录"
+      >
+        <SlidersHorizontal :size="15" />
+      </RouterLink>
     </div>
   </header>
 
-  <div v-if="dirty && route.path !== '/admin'" class="draft-banner">
+  <div v-if="dirty && route.path !== '/admin'" class="draft-pill">
     <span>本地草稿预览中</span>
     <RouterLink to="/admin">发布 <ArrowUpRight :size="13" /></RouterLink>
   </div>
