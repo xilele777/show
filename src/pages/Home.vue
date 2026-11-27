@@ -9,6 +9,7 @@ import {
   List,
   MapPin,
   Search as SearchIcon,
+  Star,
   X
 } from 'lucide-vue-next'
 import { visibleRecords, imageUrl } from '../lib/store'
@@ -196,11 +197,37 @@ const timelineGroups = computed(() => {
               <div v-else class="no-photo"><span>LIVE</span></div>
             </div>
             <div class="timeline-info">
-              <span class="eyebrow">{{ record.type }}</span>
+              <div class="timeline-topline">
+                <time class="timeline-mobile-date" :datetime="record.date">
+                  {{ record.date.slice(5).replace('-', '.') }}
+                </time>
+                <span class="timeline-type">{{ record.type }}</span>
+                <span
+                  v-if="record.rating > 0"
+                  class="rating timeline-rating"
+                  :aria-label="`评分 ${record.rating} / 5`"
+                >
+                  <Star
+                    v-for="star in 5"
+                    :key="star"
+                    :size="11"
+                    :class="{ filled: star <= record.rating }"
+                  />
+                </span>
+              </div>
               <h4>{{ record.title }}</h4>
-              <p><MapPin :size="12" />{{ record.city }} · {{ record.venue || record.artist }}</p>
+              <p>
+                <span v-if="record.artist" class="timeline-artist">{{ record.artist }}</span>
+                <span v-if="record.artist" class="timeline-sep" aria-hidden="true">·</span>
+                <span class="timeline-place">
+                  <MapPin :size="12" />{{ record.city
+                  }}<template v-if="record.venue"> · {{ record.venue }}</template>
+                </span>
+              </p>
             </div>
-            <ArrowUpRight :size="18" class="timeline-arrow" />
+            <span class="timeline-arrow-wrap" aria-hidden="true">
+              <ArrowUpRight :size="16" class="timeline-arrow" />
+            </span>
           </RouterLink>
         </div>
       </section>

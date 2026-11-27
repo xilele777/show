@@ -202,12 +202,13 @@
 .timeline {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 44px;
+  padding-top: 6px;
 }
 
 .timeline-year {
   display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
+  grid-template-columns: 128px minmax(0, 1fr);
   gap: 28px;
   align-items: start;
 }
@@ -215,13 +216,14 @@
 .timeline-year-label {
   position: sticky;
   top: 86px;
-  padding-top: 4px;
+  padding-top: 10px;
 }
 
 .timeline-year-label h3 {
   font-family: var(--display);
-  font-size: 42px;
-  font-weight: 600;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
@@ -237,7 +239,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 4px;
   padding-left: 26px;
   border-left: 1px solid var(--line);
 }
@@ -246,17 +248,33 @@
   view-transition-class: concert-card;
   position: relative;
   display: grid;
-  grid-template-columns: 74px 96px minmax(0, 1fr) auto;
+  grid-template-columns: 58px 66px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 18px;
+  gap: 20px;
   padding: 14px 18px;
   border-radius: var(--radius-md);
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 1px solid transparent;
   transition:
-    transform 0.32s var(--ease-out-expo),
+    transform 0.36s var(--ease-out-expo),
+    background-color 0.25s ease,
     border-color 0.25s ease,
-    box-shadow 0.32s var(--ease-out-expo);
+    box-shadow 0.36s var(--ease-out-expo);
+}
+
+.timeline-record:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: -3px;
+  height: 1px;
+  background: var(--line);
+  transition: opacity 0.2s ease;
+}
+
+.timeline-record:hover::after {
+  opacity: 0;
 }
 
 .timeline-record::before {
@@ -270,12 +288,16 @@
   background: var(--canvas);
   border: 2px solid var(--line-strong);
   transform: translateY(-50%);
-  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.3s var(--ease-out-expo);
 }
 
 .timeline-record:hover {
   transform: translateX(4px);
-  border-color: var(--line-strong);
+  background: var(--surface);
+  border-color: var(--line);
   box-shadow: var(--shadow-sm);
 }
 
@@ -290,35 +312,80 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .timeline-thumb {
-  width: 96px;
-  height: 64px;
-  border-radius: var(--radius-sm);
+  width: 66px;
+  height: 88px;
+  border-radius: 10px;
   overflow: hidden;
   background: var(--surface-soft);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
 }
 
 .timeline-thumb img {
   width: 100%;
   height: 100%;
-  transition: transform 0.5s var(--ease-out-expo);
+  transition: transform 0.55s var(--ease-out-expo);
+}
+
+.timeline-thumb .no-photo {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
 }
 
 .timeline-record:hover .timeline-thumb img {
-  transform: scale(1.08);
+  transform: scale(1.07);
 }
 
 .timeline-info {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.timeline-topline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-mobile-date {
+  display: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.timeline-type {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+
+.timeline-rating {
+  gap: 2px;
 }
 
 .timeline-info h4 {
   font-family: var(--serif);
-  font-size: 17px;
-  font-weight: 600;
-  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -330,22 +397,65 @@
 }
 
 .timeline-info p {
-  margin-top: 4px;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--muted);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-artist {
+  color: var(--ink-soft);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-sep {
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+.timeline-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-arrow-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  border: 1px solid transparent;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.35s var(--ease-out-expo);
 }
 
 .timeline-arrow {
-  color: var(--muted);
-  transition: transform 0.3s var(--ease-out-expo), color 0.2s ease;
+  transition: transform 0.35s var(--ease-out-expo);
+}
+
+.timeline-record:hover .timeline-arrow-wrap {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+  color: var(--accent);
 }
 
 .timeline-record:hover .timeline-arrow {
-  color: var(--accent);
-  transform: translate(3px, -3px);
+  transform: translate(2px, -2px);
 }
 
 /* ---------- Empty & Loading States ---------- */
@@ -388,10 +498,35 @@
   .timeline-year-label {
     position: static;
   }
+  .timeline-list {
+    padding-left: 18px;
+  }
   .timeline-record {
-    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 12px 10px;
+  }
+  .timeline-record::before {
+    left: -23px;
+  }
+  .timeline-record > time {
+    display: none;
+  }
+  .timeline-mobile-date {
+    display: inline;
   }
   .timeline-thumb {
+    width: 52px;
+    height: 70px;
+    border-radius: 8px;
+  }
+  .timeline-info h4 {
+    font-size: 16px;
+  }
+  .timeline-artist {
+    display: none;
+  }
+  .timeline-sep {
     display: none;
   }
   .search-box {

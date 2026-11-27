@@ -375,17 +375,7 @@ onUnmounted(() => {
 
 <template>
   <div class="page-width admin-page">
-    <div class="admin-heading">
-      <div class="admin-heading-title">
-        <h1>观演管理</h1>
-        <span class="small-badge">
-          {{ dirty ? '有未发布改动' : '已同步' }}
-        </span>
-      </div>
-      <RouterLink to="/" class="button secondary small">
-        返回前台 <ArrowUpRight :size="15" />
-      </RouterLink>
-    </div>
+    <h1 class="visually-hidden">观演管理</h1>
 
     <div class="admin-shell">
       <aside class="admin-sidebar">
