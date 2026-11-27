@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { ZodError } from 'zod'
 import {
   ArrowDown,
   ArrowLeft,
@@ -29,6 +30,7 @@ import {
 import { categoryStyle } from '../../lib/categories'
 import { imageUrl, pendingAssets, prepareImage } from '../../lib/store'
 import { isR2Ready, uploadAssetToR2 } from '../../lib/r2'
+import { parseProgramText, splitPerformerNames } from '../../lib/program'
 
 const props = defineProps<{
   record: ConcertRecord
@@ -148,14 +150,15 @@ const suggestedTags = computed(() =>
   (props.archiveTags ?? []).filter((t) => !draft.value.tags.includes(t)).slice(0, 14)
 )
 
-const snapshot = () =>
-  JSON.stringify({ ...draft.value, program: programItems.value })
+const snapshot = () => JSON.stringify({ ...draft.value, program: programItems.value })
 
 watch(
   () => props.record,
   (value) => {
     const cloned = JSON.parse(JSON.stringify(value)) as ConcertRecord
     cloned.soloists = cloned.soloists ?? []
+    cloned.cast = cloned.cast ?? []
+    cloned.subtitle = cloned.subtitle ?? ''
     cloned.orchestra = cloned.orchestra ?? ''
     cloned.conductor = cloned.conductor ?? ''
     cloned.seat = cloned.seat ?? ''
@@ -223,7 +226,14 @@ function removeTag(index: number) {
 
 function addProgramItem() {
   const prevHalf = programItems.value.at(-1)?.half ?? ''
-  programItems.value.push({ title: '', composer: '', half: prevHalf })
+  programItems.value.push({
+    title: '',
+    composer: '',
+    half: prevHalf,
+    source: '',
+    lyricist: '',
+    performers: []
+  })
 }
 
 function removeProgramItem(index: number) {
@@ -238,29 +248,16 @@ function moveProgramItem(index: number, delta: -1 | 1) {
 }
 
 function importBatchProgram() {
-  const lines = batchProgramText.value
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-  let currentHalf: ProgramItem['half'] = ''
-  for (const line of lines) {
-    if (/^(上半场|下半场|加演)[:：]?$/.test(line)) {
-      currentHalf = line.replace(/[:：]$/, '') as ProgramItem['half']
-      continue
-    }
-    const splitMatch = /^([^·—-]+?)\s*[·—-]\s*(.+)$/.exec(line)
-    if (splitMatch && splitMatch[1]!.length <= 24) {
-      programItems.value.push({
-        composer: splitMatch[1]!.trim(),
-        title: splitMatch[2]!.trim(),
-        half: currentHalf
-      })
-    } else {
-      programItems.value.push({ title: line, composer: '', half: currentHalf })
-    }
+  emit('error', '')
+  try {
+    const parsed = parseProgramText(batchProgramText.value)
+    if (programItems.value.length + parsed.length > 100) throw new Error('单场节目单最多 100 首曲目。')
+    programItems.value.push(...parsed)
+    batchProgramText.value = ''
+    showBatchProgram.value = false
+  } catch (error) {
+    emit('error', error instanceof Error ? error.message : '节目单导入失败')
   }
-  batchProgramText.value = ''
-  showBatchProgram.value = false
 }
 
 async function upload(event: Event) {
@@ -324,6 +321,7 @@ function submit() {
   try {
     const cleanProgram = programItems.value
       .map((item) => ({
+        ...item,
         title: item.title.trim(),
         composer: item.composer.trim(),
         half: item.half
@@ -332,18 +330,35 @@ function submit() {
 
     const parsed = recordSchema.parse({
       ...draft.value,
+      cast: draft.value.cast.filter((person) => person.name.trim() || person.role.trim()),
       tags: [...new Set(draft.value.tags)],
       program: cleanProgram
     })
     emit('save', parsed)
   } catch (caught) {
+    const labels: Record<string, string> = {
+      title: '演出标题',
+      date: '日期',
+      city: '城市',
+      cast: '演出人员',
+      program: '节目单',
+      name: '姓名',
+      role: '职责 / 角色',
+      source: '剧目出处',
+      lyricist: '作词',
+      performers: '演唱 / 演奏者',
+      composer: '作曲',
+      note: '个人感想',
+      subtitle: '副标题'
+    }
+    const issue = caught instanceof ZodError ? caught.issues[0] : undefined
     emit(
       'error',
-      caught instanceof Error
-        ? caught.message.startsWith('[')
-          ? '请填写演出标题、有效日期和城市。'
-          : caught.message
-        : '保存失败'
+      issue
+        ? `${issue.path.map((part) => (typeof part === 'number' ? `第 ${part + 1} 项` : (labels[part] ?? part))).join(' · ')}：${issue.message}`
+        : caught instanceof Error
+          ? caught.message
+          : '保存失败'
     )
   }
 }
@@ -436,12 +451,7 @@ function submit() {
 
       <label class="full">
         演出标题 *
-        <input
-          v-model="draft.title"
-          required
-          maxlength="160"
-          placeholder="例如：柴可夫斯基第五交响曲"
-        />
+        <input v-model="draft.title" required maxlength="160" placeholder="例如：柴可夫斯基第五交响曲" />
       </label>
 
       <label>
@@ -455,7 +465,7 @@ function submit() {
       </label>
 
       <div class="field-label full">
-        <span>独奏家 / 特邀嘉宾（支持多位）</span>
+        <span>独奏家（明确标注时填写）</span>
         <div class="chip-editor">
           <div v-if="draft.soloists.length" class="chip-list">
             <span v-for="(person, idx) in draft.soloists" :key="`${person}-${idx}`" class="editor-chip">
@@ -485,9 +495,51 @@ function submit() {
       </div>
 
       <label class="full">
-        补充演出信息 / 巡演副标
-        <input v-model="draft.artist" maxlength="160" placeholder="例如：亚洲巡演特别场（未填乐团/指挥时作为主署名显示）" />
+        副标题 / 巡演副标
+        <input v-model="draft.subtitle" maxlength="160" placeholder="有副标题时填写，未提供则留空" />
       </label>
+
+      <label v-if="draft.artist" class="full">
+        历史署名
+        <input v-model="draft.artist" maxlength="160" />
+        <small>旧记录保留的署名；演出人员请填写在下方。</small>
+      </label>
+
+      <fieldset class="cast-editor full">
+        <legend>演出人员 / 演员表</legend>
+        <p class="field-hint">按节目单填写姓名；职责或角色未提供时留空。</p>
+        <div v-for="(person, index) in draft.cast" :key="index" class="cast-editor-row">
+          <label :for="`cast-name-${index}`">
+            姓名
+            <input :id="`cast-name-${index}`" v-model="person.name" maxlength="80" required />
+          </label>
+          <label :for="`cast-role-${index}`">
+            职责 / 角色
+            <input
+              :id="`cast-role-${index}`"
+              v-model="person.role"
+              maxlength="80"
+              placeholder="未提供则留空"
+            />
+          </label>
+          <button
+            type="button"
+            class="icon-button"
+            :aria-label="`移除演出人员 ${person.name || index + 1}`"
+            @click="draft.cast.splice(index, 1)"
+          >
+            <X :size="14" />
+          </button>
+        </div>
+        <button
+          type="button"
+          class="button secondary small"
+          :disabled="draft.cast.length >= 100"
+          @click="draft.cast.push({ name: '', role: '' })"
+        >
+          <Plus :size="14" />添加演出人员
+        </button>
+      </fieldset>
 
       <div class="field-label full">
         <span>演出日期 *</span>
@@ -549,10 +601,18 @@ function submit() {
               <ChevronLeft :size="15" />
             </button>
             <div class="calendar-selects">
-              <select v-model.number="calViewYear" class="select-control cal-mini-select" aria-label="日历年份">
+              <select
+                v-model.number="calViewYear"
+                class="select-control cal-mini-select"
+                aria-label="日历年份"
+              >
                 <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}年</option>
               </select>
-              <select v-model.number="calViewMonth" class="select-control cal-mini-select" aria-label="日历月份">
+              <select
+                v-model.number="calViewMonth"
+                class="select-control cal-mini-select"
+                aria-label="日历月份"
+              >
                 <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
               </select>
             </div>
@@ -567,7 +627,8 @@ function submit() {
           </div>
 
           <div class="calendar-weekdays" aria-hidden="true">
-            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span
+            ><span>日</span>
           </div>
 
           <div class="calendar-grid">
@@ -578,8 +639,7 @@ function submit() {
                 type="button"
                 class="calendar-day"
                 :class="{
-                  selected:
-                    day === dateDay && calViewYear === dateYear && calViewMonth === dateMonth
+                  selected: day === dateDay && calViewYear === dateYear && calViewMonth === dateMonth
                 }"
                 @click="pickCalendarDay(day)"
               >
@@ -647,24 +707,19 @@ function submit() {
           <span class="star-picker-text">
             {{ draft.rating ? `${draft.rating} / 5` : '未评分' }}
           </span>
-          <button
-            v-if="draft.rating > 0"
-            type="button"
-            class="star-clear-btn"
-            @click="draft.rating = 0"
-          >
+          <button v-if="draft.rating > 0" type="button" class="star-clear-btn" @click="draft.rating = 0">
             清除
           </button>
         </div>
       </div>
 
       <label class="full">
-        观后记
+        个人感想 / 观后记
         <textarea
           v-model="draft.note"
           rows="5"
           maxlength="20000"
-          placeholder="记下现场的瞬间与感受…"
+          placeholder="记下现场的瞬间与感受；演员表和节目单请填写在各自区域。"
         />
       </label>
 
@@ -711,7 +766,7 @@ function submit() {
 
       <div class="field-label full">
         <div class="field-head-inline">
-          <span>曲目单（可区分上下半场，逐条录入曲目名与作曲家）</span>
+          <span>节目单</span>
           <button
             type="button"
             class="banner-link muted-action"
@@ -723,9 +778,10 @@ function submit() {
 
         <div v-if="showBatchProgram" class="batch-program-box">
           <textarea
+            aria-label="批量导入节目单"
             v-model="batchProgramText"
             rows="4"
-            placeholder="每行一首，可用「上半场」「下半场」「加演」单独成行分组，或写「作曲家 · 曲目名」"
+            placeholder="可粘贴含曲目名称、剧目出处、作词、作曲、演唱的 Markdown 表格；也支持每行一首，以「上半场」「下半场」「加演」分组。"
           />
           <button type="button" class="button secondary small" @click="importBatchProgram">
             导入到曲目单
@@ -733,54 +789,94 @@ function submit() {
         </div>
 
         <div class="program-builder">
-          <div v-for="(item, index) in programItems" :key="index" class="program-row">
-            <select v-model="item.half" class="select-control program-half-select" aria-label="场次分段">
-              <option value="">不区分</option>
-              <option v-for="h in programHalves" :key="h" :value="h">{{ h }}</option>
-            </select>
-            <input
-              v-model="item.composer"
-              maxlength="120"
-              class="program-composer-input"
-              placeholder="作曲家（可选）"
-              aria-label="作曲家"
-            />
-            <input
-              v-model="item.title"
-              maxlength="200"
-              class="program-title-input"
-              placeholder="曲目名 *"
-              aria-label="曲目名"
-            />
-            <div class="program-row-actions">
-              <button
-                type="button"
-                class="icon-button"
-                :disabled="index === 0"
-                aria-label="上移"
-                @click="moveProgramItem(index, -1)"
-              >
-                <ArrowUp :size="13" />
-              </button>
-              <button
-                type="button"
-                class="icon-button"
-                :disabled="index === programItems.length - 1"
-                aria-label="下移"
-                @click="moveProgramItem(index, 1)"
-              >
-                <ArrowDown :size="13" />
-              </button>
-              <button
-                type="button"
-                class="icon-button"
-                aria-label="删除曲目"
-                @click="removeProgramItem(index)"
-              >
-                <X :size="13" />
-              </button>
+          <fieldset v-for="(item, index) in programItems" :key="index" class="program-entry-editor">
+            <legend>曲目 {{ index + 1 }}</legend>
+            <div class="program-row">
+              <label :for="`program-half-${index}`">
+                分段
+                <select
+                  :id="`program-half-${index}`"
+                  v-model="item.half"
+                  class="select-control program-half-select"
+                >
+                  <option value="">不区分</option>
+                  <option v-for="h in programHalves" :key="h" :value="h">{{ h }}</option>
+                </select>
+              </label>
+              <label :for="`program-composer-${index}`">
+                作曲
+                <input
+                  :id="`program-composer-${index}`"
+                  v-model="item.composer"
+                  maxlength="120"
+                  class="program-composer-input"
+                  placeholder="作曲家（可选）"
+                />
+              </label>
+              <label :for="`program-title-${index}`" class="program-title-input">
+                曲目名 *
+                <input
+                  :id="`program-title-${index}`"
+                  v-model="item.title"
+                  maxlength="200"
+                  placeholder="曲目名 *"
+                />
+              </label>
+              <div class="program-row-actions">
+                <button
+                  type="button"
+                  class="icon-button"
+                  :disabled="index === 0"
+                  :aria-label="`上移曲目 ${index + 1}`"
+                  @click="moveProgramItem(index, -1)"
+                >
+                  <ArrowUp :size="13" />
+                </button>
+                <button
+                  type="button"
+                  class="icon-button"
+                  :disabled="index === programItems.length - 1"
+                  :aria-label="`下移曲目 ${index + 1}`"
+                  @click="moveProgramItem(index, 1)"
+                >
+                  <ArrowDown :size="13" />
+                </button>
+                <button
+                  type="button"
+                  class="icon-button"
+                  :aria-label="`删除曲目 ${index + 1}`"
+                  @click="removeProgramItem(index)"
+                >
+                  <X :size="13" />
+                </button>
+              </div>
             </div>
-          </div>
+            <div class="program-extra-fields">
+              <label :for="`program-source-${index}`">
+                剧目出处
+                <input
+                  :id="`program-source-${index}`"
+                  v-model="item.source"
+                  maxlength="200"
+                  placeholder="例如：1964年歌剧《江姐》"
+                />
+              </label>
+              <label :for="`program-lyricist-${index}`">
+                作词
+                <input :id="`program-lyricist-${index}`" v-model="item.lyricist" maxlength="160" />
+              </label>
+              <label :for="`program-performers-${index}`">
+                演唱 / 演奏者
+                <input
+                  :id="`program-performers-${index}`"
+                  :value="item.performers.join('、')"
+                  maxlength="2400"
+                  placeholder="多位姓名用顿号或逗号分隔"
+                  @change="item.performers = splitPerformerNames(($event.target as HTMLInputElement).value)"
+                />
+              </label>
+            </div>
+          </fieldset>
 
           <button type="button" class="button secondary small add-program-btn" @click="addProgramItem">
             <Plus :size="14" />添加一条曲目
@@ -795,7 +891,9 @@ function submit() {
           现场照片 <span>{{ draft.images.length }} / 20</span>
         </h3>
         <span>
-          {{ isR2Ready() ? 'R2 图床已就绪（上传将直传 Cloudflare R2）' : '首张为封面 · 支持 JPG / PNG / WebP' }}
+          {{
+            isR2Ready() ? 'R2 图床已就绪（上传将直传 Cloudflare R2）' : '首张为封面 · 支持 JPG / PNG / WebP'
+          }}
         </span>
       </div>
       <div class="upload-grid">
@@ -810,9 +908,7 @@ function submit() {
             <X :size="14" />
           </button>
           <span v-if="index === 0" class="cover-badge">封面</span>
-          <button v-else type="button" class="cover-button" @click="makeCover(index)">
-            设为封面
-          </button>
+          <button v-else type="button" class="cover-button" @click="makeCover(index)">设为封面</button>
         </div>
 
         <label v-if="draft.images.length < 20" class="upload-button">
@@ -849,9 +945,7 @@ function submit() {
 
     <div class="form-actions">
       <button type="button" class="button secondary small" @click="emit('cancel')">取消</button>
-      <button class="button small" type="submit" :disabled="busy">
-        <Save :size="15" />保存草稿
-      </button>
+      <button class="button small" type="submit" :disabled="busy"><Save :size="15" />保存草稿</button>
     </div>
   </form>
 </template>

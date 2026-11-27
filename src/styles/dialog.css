@@ -388,7 +388,9 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   padding: 0;
   border-radius: 50%;
   background: rgb(255 255 255 / 0.42);
-  transition: width 0.28s var(--ease-out-expo), background-color 0.2s ease;
+  transition:
+    width 0.28s var(--ease-out-expo),
+    background-color 0.2s ease;
 }
 
 .photo-dot.active {
@@ -544,12 +546,16 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   color: var(--cat-color-dark, var(--accent));
 }
 
-.setlist-block {
+.setlist-block,
+.cast-block,
+.personal-note-block {
   padding-top: 16px;
   border-top: 1px solid var(--line);
 }
 
-.setlist-block h2 {
+.setlist-block h2,
+.cast-block h2,
+.personal-note-block h2 {
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
@@ -606,10 +612,46 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 }
 
 .program-main {
+  display: grid;
+  min-inline-size: 0;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.program-credits {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 10px;
+  margin: 0;
+  font-size: 11.5px;
+}
+
+.program-credits dt {
+  color: var(--muted);
+}
+
+.program-credits dd {
+  margin: 0;
+}
+
+.cast-list {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
+  gap: 8px 18px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+}
+
+.cast-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cast-list small {
+  color: var(--muted);
 }
 
 .program-title {
@@ -643,7 +685,9 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   color: var(--muted);
   padding: 6px 10px;
   border-radius: 999px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .detail-footer-nav span {

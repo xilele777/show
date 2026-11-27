@@ -1,7 +1,7 @@
-import { defaultEventTypes, type Archive } from '../../src/lib/schema'
+import { archiveSchema, defaultEventTypes } from '../../src/lib/schema'
 
 // Keep behavior tests independent of records and settings edited through the site.
-export const archiveFixture: Archive = {
+export const archiveFixture = archiveSchema.parse({
   version: 1,
   settings: {
     name: '余响',
@@ -59,4 +59,4 @@ export const archiveFixture: Archive = {
       demo: false
     }
   ]
-}
+})

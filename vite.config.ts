@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { ArchiveStore } from './mcp/archive'
 
 function localArchive(): Plugin {
   return {
@@ -56,24 +57,26 @@ function localArchive(): Plugin {
             send(400, '图片无效')
             return
           }
-          const publicDirectory = resolve(server.config.root, 'public')
-          await mkdir(resolve(publicDirectory, 'uploads'), { recursive: true })
-          await mkdir(resolve(publicDirectory, 'content'), { recursive: true })
-          const contentPath = resolve(publicDirectory, 'content/archive.json')
-          // Preserve the previous snapshot so local deletions can be recovered.
-          const backupDirectory = resolve(server.config.root, '.concshow-backups')
-          await mkdir(backupDirectory, { recursive: true })
-          try {
-            await writeFile(resolve(backupDirectory, 'archive.backup.json'), await readFile(contentPath))
-          } catch (error) {
-            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-          }
-          const referenced = new Set(archive.records.flatMap((record) => record.images))
-          for (const asset of assets.filter((asset) => referenced.has(asset.path)))
-            await writeFile(resolve(publicDirectory, asset.path), Buffer.from(asset.base64, 'base64'))
-          const temp = `${contentPath}.${crypto.randomUUID()}.tmp`
-          await writeFile(temp, `${JSON.stringify(archive, null, 2)}\n`)
-          await rename(temp, contentPath)
+          await new ArchiveStore(server.config.root).locked(async () => {
+            const publicDirectory = resolve(server.config.root, 'public')
+            await mkdir(resolve(publicDirectory, 'uploads'), { recursive: true })
+            await mkdir(resolve(publicDirectory, 'content'), { recursive: true })
+            const contentPath = resolve(publicDirectory, 'content/archive.json')
+            // Preserve the previous snapshot so local deletions can be recovered.
+            const backupDirectory = resolve(server.config.root, '.concshow-backups')
+            await mkdir(backupDirectory, { recursive: true })
+            try {
+              await writeFile(resolve(backupDirectory, 'archive.backup.json'), await readFile(contentPath))
+            } catch (error) {
+              if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+            }
+            const referenced = new Set(archive.records.flatMap((record) => record.images))
+            for (const asset of assets.filter((asset) => referenced.has(asset.path)))
+              await writeFile(resolve(publicDirectory, asset.path), Buffer.from(asset.base64, 'base64'))
+            const temp = `${contentPath}.${crypto.randomUUID()}.tmp`
+            await writeFile(temp, `${JSON.stringify(archive, null, 2)}\n`)
+            await rename(temp, contentPath)
+          })
           response.end(JSON.stringify({ ok: true }))
         } catch (error) {
           send(400, error instanceof Error ? error.message : '保存失败')

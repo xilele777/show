@@ -35,7 +35,9 @@ export function filterRecords(records: ConcertRecord[], filters: RecordFilters):
       (!needle ||
         [
           record.title,
+          record.subtitle,
           record.artist,
+          ...record.cast.map((person) => `${person.name} ${person.role}`),
           record.orchestra,
           record.conductor,
           ...record.soloists,
@@ -45,7 +47,7 @@ export function filterRecords(records: ConcertRecord[], filters: RecordFilters):
           ...record.tags,
           ...record.program.map((p) => {
             const item = normalizeProgramItem(p)
-            return `${item.composer} ${item.title}`
+            return `${item.composer} ${item.title} ${item.source} ${item.lyricist} ${item.performers.join(' ')}`
           })
         ]
           .join(' ')

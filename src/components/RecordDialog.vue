@@ -41,9 +41,7 @@ const navList = computed(() => {
   return filtered.some((item) => item.id === route.query.record) ? filtered : visibleRecords.value
 })
 const navIndex = computed(() => navList.value.findIndex((item) => item.id === route.query.record))
-const prevRecord = computed(() =>
-  navIndex.value > 0 ? navList.value[navIndex.value - 1] : undefined
-)
+const prevRecord = computed(() => (navIndex.value > 0 ? navList.value[navIndex.value - 1] : undefined))
 const nextRecord = computed(() =>
   navIndex.value >= 0 && navIndex.value < navList.value.length - 1
     ? navList.value[navIndex.value + 1]
@@ -57,14 +55,7 @@ const recordTransition = computed(() => (recordDir.value > 0 ? 'detail-next' : '
 
 const hasDetailFacts = computed(() => {
   const rec = activeRecord.value
-  return Boolean(
-    rec &&
-      (rec.orchestra ||
-        rec.conductor ||
-        rec.soloists.length ||
-        rec.seat ||
-        rec.price)
-  )
+  return Boolean(rec && (rec.orchestra || rec.conductor || rec.soloists.length || rec.seat || rec.price))
 })
 
 const groupedProgram = computed(() => {
@@ -72,14 +63,13 @@ const groupedProgram = computed(() => {
   if (!rec || !rec.program.length) return []
   const normalized = rec.program.map(normalizeProgramItem)
   const groups: { half: string; items: (ProgramItem & { index: number })[] }[] = []
-  let idx = 1
   for (const item of normalized) {
     const label = item.half || ''
     const existing = groups.find((g) => g.half === label)
     if (existing) {
-      existing.items.push({ ...item, index: idx++ })
+      existing.items.push({ ...item, index: existing.items.length + 1 })
     } else {
-      groups.push({ half: label, items: [{ ...item, index: idx++ }] })
+      groups.push({ half: label, items: [{ ...item, index: 1 }] })
     }
   }
   return groups
@@ -411,20 +401,10 @@ async function copyLink() {
         </div>
 
         <template v-if="activeRecord.images.length > 1">
-          <button
-            type="button"
-            class="photo-prev icon-button"
-            aria-label="上一张"
-            @click="changePhoto(-1)"
-          >
+          <button type="button" class="photo-prev icon-button" aria-label="上一张" @click="changePhoto(-1)">
             <ChevronLeft :size="18" />
           </button>
-          <button
-            type="button"
-            class="photo-next icon-button"
-            aria-label="下一张"
-            @click="changePhoto(1)"
-          >
+          <button type="button" class="photo-next icon-button" aria-label="下一张" @click="changePhoto(1)">
             <ChevronRight :size="18" />
           </button>
           <div class="photo-dots" role="group" aria-label="切换图片">
@@ -453,8 +433,8 @@ async function copyLink() {
 
             <header class="detail-header">
               <h1 id="record-title">{{ activeRecord.title }}</h1>
-              <p v-if="activeRecord.artist" class="detail-subtitle">
-                {{ activeRecord.artist }}
+              <p v-if="activeRecord.subtitle || activeRecord.artist" class="detail-subtitle">
+                {{ activeRecord.subtitle || activeRecord.artist }}
               </p>
               <div class="detail-meta">
                 <span><CalendarDays :size="13" />{{ dateLabel(activeRecord.date) }}</span>
@@ -490,32 +470,69 @@ async function copyLink() {
                 <dt>独奏</dt>
                 <dd>{{ activeRecord.soloists.join(' / ') }}</dd>
               </template>
-              <template v-if="activeRecord.seat || activeRecord.price">
-                <dt>席位</dt>
-                <dd>
-                  {{ [activeRecord.seat, formatPriceLabel(activeRecord.price)].filter(Boolean).join(' · ') }}
-                </dd>
+              <template v-if="activeRecord.seat">
+                <dt>座位</dt>
+                <dd>{{ activeRecord.seat }}</dd>
+              </template>
+              <template v-if="activeRecord.price">
+                <dt>票价</dt>
+                <dd>{{ formatPriceLabel(activeRecord.price) }}</dd>
               </template>
             </dl>
 
-            <p v-if="activeRecord.note" class="detail-note">{{ activeRecord.note }}</p>
+            <section v-if="activeRecord.cast.length" class="cast-block">
+              <h2>演出人员</h2>
+              <ul class="cast-list" role="list">
+                <li v-for="(person, index) in activeRecord.cast" :key="index">
+                  <span>{{ person.name }}</span>
+                  <small v-if="person.role">{{ person.role }}</small>
+                </li>
+              </ul>
+            </section>
 
             <section v-if="groupedProgram.length" class="setlist-block">
-              <h2>曲目单</h2>
+              <h2>节目单</h2>
               <div class="setlist-groups">
                 <div v-for="group in groupedProgram" :key="group.half || 'default'" class="setlist-group">
-                  <p v-if="group.half" class="setlist-half-heading">{{ group.half }}</p>
-                  <ol class="program">
+                  <h3 v-if="group.half" class="setlist-half-heading">{{ group.half }}</h3>
+                  <ol class="program" role="list">
                     <li v-for="item in group.items" :key="item.index">
-                      <span class="program-num">{{ String(item.index).padStart(2, '0') }}</span>
+                      <span class="program-num" aria-hidden="true">{{
+                        String(item.index).padStart(2, '0')
+                      }}</span>
                       <div class="program-main">
                         <strong class="program-title">{{ item.title }}</strong>
-                        <span v-if="item.composer" class="program-composer">{{ item.composer }}</span>
+                        <dl
+                          v-if="item.source || item.composer || item.lyricist || item.performers.length"
+                          class="program-credits"
+                        >
+                          <template v-if="item.source"
+                            ><dt>出处</dt>
+                            <dd>{{ item.source }}</dd></template
+                          >
+                          <template v-if="item.lyricist"
+                            ><dt>作词</dt>
+                            <dd>{{ item.lyricist }}</dd></template
+                          >
+                          <template v-if="item.composer"
+                            ><dt>作曲</dt>
+                            <dd>{{ item.composer }}</dd></template
+                          >
+                          <template v-if="item.performers.length"
+                            ><dt>演唱 / 演奏</dt>
+                            <dd>{{ item.performers.join('、') }}</dd></template
+                          >
+                        </dl>
                       </div>
                     </li>
                   </ol>
                 </div>
               </div>
+            </section>
+
+            <section v-if="activeRecord.note" class="personal-note-block">
+              <h2>个人感想</h2>
+              <p class="detail-note">{{ activeRecord.note }}</p>
             </section>
 
             <div v-if="activeRecord.tags.length" class="tags">

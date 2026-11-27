@@ -22,6 +22,11 @@ const emit = defineEmits<{
 const filterQuery = ref('')
 const statusFilter = ref<'all' | 'published' | 'hidden' | 'upcoming'>('all')
 
+function clearFilters() {
+  filterQuery.value = ''
+  statusFilter.value = 'all'
+}
+
 const filteredRecords = computed(() => {
   const q = filterQuery.value.trim().toLocaleLowerCase()
   return props.records.filter((r) => {
@@ -29,7 +34,19 @@ const filteredRecords = computed(() => {
     if (statusFilter.value === 'hidden' && r.published) return false
     if (statusFilter.value === 'upcoming' && r.status !== 'upcoming') return false
     if (!q) return true
-    return [r.title, r.artist, r.orchestra, r.conductor, ...r.soloists, r.city, r.venue, r.type, ...r.tags]
+    return [
+      r.title,
+      r.subtitle,
+      r.artist,
+      ...r.cast.map((person) => `${person.name} ${person.role}`),
+      r.orchestra,
+      r.conductor,
+      ...r.soloists,
+      r.city,
+      r.venue,
+      r.type,
+      ...r.tags
+    ]
       .join(' ')
       .toLocaleLowerCase()
       .includes(q)
@@ -54,9 +71,7 @@ const filteredRecords = computed(() => {
         >
           <Trash2 :size="13" />清空示例
         </button>
-        <button type="button" class="button small" @click="emit('create')">
-          <Plus :size="15" />新增
-        </button>
+        <button type="button" class="button small" @click="emit('create')"><Plus :size="15" />新增</button>
       </div>
     </div>
 
@@ -71,11 +86,7 @@ const filteredRecords = computed(() => {
     </label>
 
     <div v-if="records.length > 2" class="master-filter-pills" role="group" aria-label="快速筛选">
-      <button
-        type="button"
-        :class="{ active: statusFilter === 'all' }"
-        @click="statusFilter = 'all'"
-      >
+      <button type="button" :class="{ active: statusFilter === 'all' }" @click="statusFilter = 'all'">
         全部
       </button>
       <button
@@ -85,11 +96,7 @@ const filteredRecords = computed(() => {
       >
         公开
       </button>
-      <button
-        type="button"
-        :class="{ active: statusFilter === 'hidden' }"
-        @click="statusFilter = 'hidden'"
-      >
+      <button type="button" :class="{ active: statusFilter === 'hidden' }" @click="statusFilter = 'hidden'">
         未公开
       </button>
       <button
@@ -156,9 +163,7 @@ const filteredRecords = computed(() => {
     <div v-if="!records.length && !isNew" class="empty-state master-empty">
       <h3>还没有观演记录</h3>
       <p>添加第一场演出的照片与记忆。</p>
-      <button type="button" class="button small" @click="emit('create')">
-        <Plus :size="15" />新增记录
-      </button>
+      <button type="button" class="button small" @click="emit('create')"><Plus :size="15" />新增记录</button>
     </div>
 
     <div v-else-if="!filteredRecords.length && !isNew" class="empty-state master-empty">
@@ -166,7 +171,7 @@ const filteredRecords = computed(() => {
       <button
         type="button"
         class="button secondary small"
-        @click="filterQuery = ''; statusFilter = 'all'"
+        @click="clearFilters"
       >
         清除筛选
       </button>

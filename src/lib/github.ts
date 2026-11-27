@@ -31,6 +31,7 @@ export class GithubArchive {
     const { owner, repo } = this.config
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}${path ? `/${path}` : ''}`, {
       method,
+      signal: AbortSignal.timeout(30_000),
       headers: {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${this.token}`,

@@ -18,7 +18,9 @@
     {
       "id": "4887bb62-c631-4523-ac7f-71e1efd4366e",
       "title": "石倚洁&上海歌剧院《爱之甘醇》",
+      "subtitle": "",
       "artist": "音乐会版",
+      "cast": [],
       "orchestra": "长沙交响乐团",
       "conductor": "范焘",
       "soloists": [
@@ -48,7 +50,10 @@
         {
           "title": "《爱之甘醇》",
           "composer": "葛塔诺·多尼采蒂",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         }
       ],
       "images": [
@@ -61,7 +66,9 @@
     {
       "id": "17bbacba-03fa-4855-ad4a-a97a1d37bbb4",
       "title": "大型原创民族音乐会《水云赋》",
+      "subtitle": "",
       "artist": "",
+      "cast": [],
       "orchestra": "湖南民族乐团",
       "conductor": "张列",
       "soloists": [
@@ -84,27 +91,42 @@
         {
           "title": "民族管弦乐《湘江北去》",
           "composer": "李尚谦",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "吟唱、笙竽与乐队《千古沉吟》",
           "composer": "王甫建",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "箫歌与傩舞《梅山手诀》",
           "composer": "王甫建",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "二胡协奏曲《芙蓉花韵》",
           "composer": "黄文",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "原创古琴协奏曲《云水赋》",
           "composer": "王云飞",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         }
       ],
       "images": [
@@ -117,7 +139,9 @@
     {
       "id": "3d67f79b-b51f-4c2d-a3f0-4bffcbb81a5c",
       "title": "俄罗斯回响-柴院室内合唱团音乐会",
+      "subtitle": "",
       "artist": "",
+      "cast": [],
       "orchestra": "莫斯科国立柴科夫斯基音乐学院室内合唱团",
       "conductor": "亚历山大・索洛维耶夫",
       "soloists": [],
@@ -137,142 +161,226 @@
         {
           "title": "《向艺术致敬》",
           "composer": "斯克里亚宾",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《在船上》（词：波隆斯基）",
           "composer": "塔涅耶夫",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《母亲把思念寄给儿子》（词：伊萨科夫斯基）",
           "composer": "谢巴林",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《古风舞曲》",
           "composer": "斯维里多夫",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《我们被遗忘的土地》（选自《克柳耶夫三联画》，词：克柳耶夫）",
           "composer": "列杰涅夫",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《回忆》（词：埃什派）",
           "composer": "埃什派",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《花楸树并非因寒冷而颤抖》（词：叶赛宁）",
           "composer": "祖耶夫",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《一个女孩在合唱团里歌唱》（词：勃洛克）",
           "composer": "波捷延科",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《星星》（词：科甘）",
           "composer": "波德盖茨",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《温柔》（词：多布罗纳沃夫，改编：扎诺林）",
           "composer": "帕赫穆托娃",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《涅林加咖啡馆》（选自清唱剧《鹰的秋之哀鸣》，词：布罗茨基）",
           "composer": "叶夫格拉福夫",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《无词歌》",
           "composer": "博德罗夫",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《人若无智，何其艰难》（选自《俄罗斯民间谚语》）",
           "composer": "谢德林",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《婚礼颂歌》（词：布尔柳克）",
           "composer": "谢德林",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "中场休息",
           "composer": "",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《在幽暗的森林里》",
           "composer": "斯维什尼科夫（改编）",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《田野里有棵白桦树》",
           "composer": "科热夫尼科夫（改编）",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《沿着彼得堡大道……》",
           "composer": "扎诺林（改编）",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《哦，波鲁什卡－帕拉尼娅》",
           "composer": "冈察罗夫（改编）",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《莫斯科郊外的晚上》《山楂树》《红莓花开》《喀秋莎》",
           "composer": "俄罗斯歌曲联唱",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《祖国从哪里开始？》（词：马图索夫斯基，改编：波捷延科）",
           "composer": "巴斯纳",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《遥远祖国之歌》",
           "composer": "塔里维尔季耶夫",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《阿廖沙》（词：万申金，改编：巴京）",
           "composer": "科尔马诺夫斯基",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《鹤群》（词：加姆扎托夫，改编：波捷延科）",
           "composer": "弗连克尔",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《岁月飞逝》（词：叶夫根尼·多尔马托夫斯基）",
           "composer": "弗拉德金",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《草原骑兵之歌》（词：古谢夫，改编：叶基莫夫）",
           "composer": "克尼佩尔",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《深肤色的姑娘》（词：什维多夫，改编：乌留平）",
           "composer": "诺维科夫",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "音乐剧《莫斯科之约会》终曲",
           "composer": "柴可夫斯基",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         }
       ],
       "images": [
@@ -285,7 +393,9 @@
     {
       "id": "dfc9d0f7-26e0-4c38-80bc-4c97af27ea63",
       "title": "光影留声 岁月如歌 方琼师生音乐会",
+      "subtitle": "",
       "artist": "",
+      "cast": [],
       "orchestra": "长沙交响乐团",
       "conductor": "范焘",
       "soloists": [
@@ -307,87 +417,138 @@
         {
           "title": "《江山无限》（电视剧《康熙微服私访记》片头曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《相思》（电视剧《西游记后传》片尾曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《曙色》（电视剧《走向共和》主题曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《等待》（电视剧《汉武大帝》片尾曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《谁不说俺家乡好》（电影《红日》插曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "男女声二重唱《凉凉》（电视剧《三生三世十里桃花》片尾曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《生命的河》（电影《1942》主题曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《You are my everything》（电视剧《太阳的后裔》插曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《On my own》（选自音乐剧《悲惨世界》）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《The Music of the Night》（选自音乐剧《剧院魅影》）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《All I ask of you》（选自音乐剧《剧院魅影》）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "《这世界那么多人》（电影《我要我们在一起》主题曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "长相忆·今天天气好晴朗》（电视剧《还珠格格》插曲）",
           "composer": "《山水迢迢",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "男生小组唱《弹起我心爱的土琵琶》（电影《铁道游击队》插曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "男生小组唱《一根竹竿容易弯》",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "女声小合唱《萱草花》（电影《你好，李焕英》主题曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         },
         {
           "title": "女声小合唱《如愿》（电影《我和我的父辈》主题曲）",
           "composer": "",
-          "half": ""
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "performers": []
         }
       ],
       "images": [
@@ -400,20 +561,49 @@
     {
       "id": "a450c680-8458-4e8a-881d-8019a309df65",
       "title": "从延安出发 中国歌剧咏叹之夜",
+      "subtitle": "",
       "artist": "",
+      "cast": [
+        {
+          "name": "幺红",
+          "role": ""
+        },
+        {
+          "name": "曹冬",
+          "role": ""
+        },
+        {
+          "name": "张莉莉",
+          "role": ""
+        },
+        {
+          "name": "郝菲",
+          "role": ""
+        },
+        {
+          "name": "翟今起",
+          "role": ""
+        },
+        {
+          "name": "蒋立章",
+          "role": ""
+        },
+        {
+          "name": "徐森",
+          "role": ""
+        },
+        {
+          "name": "赵一峦",
+          "role": ""
+        },
+        {
+          "name": "李想",
+          "role": ""
+        }
+      ],
       "orchestra": "中央歌剧院",
       "conductor": "",
-      "soloists": [
-        "幺红",
-        "曹冬",
-        "张莉莉",
-        "郝菲",
-        "翟今起",
-        "蒋立章",
-        "徐森",
-        "赵一峦",
-        "李想"
-      ],
+      "soloists": [],
       "date": "2026-11-04",
       "city": "长沙",
       "venue": "长沙音乐厅湘江大厅",
@@ -428,77 +618,153 @@
         {
           "title": "杨白劳唱段“十里风雪”",
           "composer": "集体创作",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "1945年歌剧《白毛女》",
+          "lyricist": "集体创作",
+          "performers": [
+            "赵一峦"
+          ]
         },
         {
           "title": "刘胡兰唱段“一道道水来一道道山”",
           "composer": "陈紫、茅沅、葛光锐",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "1954年歌剧《刘胡兰》",
+          "lyricist": "于村、海啸、卢肃、陈紫",
+          "performers": [
+            "张莉莉"
+          ]
         },
         {
           "title": "红梅赞",
           "composer": "羊鸣、姜春阳、金砂",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "1964年歌剧《江姐》",
+          "lyricist": "阎肃",
+          "performers": [
+            "曹冬"
+          ]
         },
         {
           "title": "沈养斋唱段“岁月如流、浮生若梦”",
           "composer": "羊鸣、姜春阳、金砂",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "1964年歌剧《江姐》",
+          "lyricist": "阎肃",
+          "performers": [
+            "赵一峦"
+          ]
         },
         {
           "title": "紫藤花",
           "composer": "施光南",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "1981年歌剧《伤逝》",
+          "lyricist": "王泉、韩伟",
+          "performers": [
+            "张莉莉",
+            "蒋立章"
+          ]
         },
         {
           "title": "阿凡提唱段“阿凡提之歌”",
           "composer": "王世光、蔡克翔",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "1981年歌剧《第一百个新娘》",
+          "lyricist": "胡献廷（执笔）、徐学达（执笔）、李树盛",
+          "performers": [
+            "蒋立章"
+          ]
         },
         {
           "title": "金子唱段“啊！我的虎子哥”",
           "composer": "金湘",
-          "half": "上半场"
+          "half": "上半场",
+          "source": "1987年歌剧《原野》",
+          "lyricist": "万方",
+          "performers": [
+            "曹冬"
+          ]
         },
         {
           "title": "娜仁高娃唱段“情歌”",
           "composer": "徐占海、刘晖",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "1995年歌剧《苍原》",
+          "lyricist": "黄维若、冯柏铭",
+          "performers": [
+            "么红"
+          ]
         },
         {
           "title": "通信员唱段“我的爱人你可听见”",
           "composer": "印青",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "2016年国家大剧院原创歌剧《长征》",
+          "lyricist": "邹静之",
+          "performers": [
+            "徐森"
+          ]
         },
         {
           "title": "夏荷唱段“沂蒙的女儿”",
           "composer": "栾凯",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "2018年歌剧《沂蒙山》",
+          "lyricist": "王晓岭、李文绪",
+          "performers": [
+            "翟今起"
+          ]
         },
         {
           "title": "阿合马唱段《阴风飒飒》",
           "composer": "王世光",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "1991年歌剧《马可·波罗》",
+          "lyricist": "胡献廷、王世光",
+          "performers": [
+            "赵一峦"
+          ]
         },
         {
           "title": "索伦唱段《百灵鸟，不要叫了》",
           "composer": "王世光",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "1991年歌剧《马可·波罗》",
+          "lyricist": "胡献廷、王世光",
+          "performers": [
+            "郝菲"
+          ]
         },
         {
           "title": "马可·波罗唱段《永别了，美好的人生》",
           "composer": "王世光",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "1991年歌剧《马可·波罗》",
+          "lyricist": "胡献廷、王世光",
+          "performers": [
+            "蒋立章"
+          ]
         },
         {
           "title": "乡谣",
           "composer": "张卓娅、王祖皆",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "2007年歌剧《野火春风斗古城》",
+          "lyricist": "王晓岭",
+          "performers": [
+            "徐森"
+          ]
         },
         {
           "title": "央金梅朵唱段“高原的精灵”",
           "composer": "捞仔",
-          "half": "下半场"
+          "half": "下半场",
+          "source": "2025年歌剧《可可西里》",
+          "lyricist": "李玉昆",
+          "performers": [
+            "郝菲"
+          ]
         }
       ],
       "images": [

@@ -42,7 +42,9 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--muted);
-  transition: background-color 0.16s ease, color 0.16s ease;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
 }
 
 .admin-tabs button:hover {
@@ -89,7 +91,9 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--muted);
-  transition: border-color 0.16s ease, color 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    color 0.16s ease;
 }
 
 .conn-status-pill:hover {
@@ -196,7 +200,9 @@
   font-weight: 500;
   color: var(--muted);
   background: var(--surface-soft);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .master-filter-pills button:hover {
@@ -231,7 +237,9 @@
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .master-item:hover {
@@ -562,7 +570,9 @@
   color: var(--muted);
   margin-left: 2px;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .toast-close:hover {
@@ -724,7 +734,10 @@
   display: grid;
   place-items: center;
   color: var(--line-strong);
-  transition: transform 0.18s var(--ease-out-expo), color 0.15s ease, background-color 0.15s ease;
+  transition:
+    transform 0.18s var(--ease-out-expo),
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .star-btn:hover {
@@ -1012,7 +1025,9 @@
   display: grid;
   place-items: center;
   color: var(--muted);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .chip-remove:hover {
@@ -1091,7 +1106,10 @@
     inset: auto;
     margin: 6px 0 0;
     position-area: block-end span-inline-end;
-    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+    position-try-fallbacks:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline;
   }
 }
 
@@ -1141,7 +1159,9 @@
   font-family: var(--mono);
   font-size: 12px;
   color: var(--ink-soft);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .calendar-day:hover {
@@ -1173,10 +1193,55 @@
   gap: 8px;
 }
 
+.cast-editor,
+.program-entry-editor {
+  min-inline-size: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.cast-editor legend,
+.program-entry-editor legend {
+  padding-inline: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.cast-editor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  margin-block-end: 12px;
+}
+
+.program-extra-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 8px;
+  margin-block-start: 12px;
+}
+
+.cast-editor label,
+.program-row label,
+.program-extra-fields label {
+  display: grid;
+  min-inline-size: 0;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.field-hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-block: 0 12px;
+}
+
 .program-row {
   display: grid;
   grid-template-columns: 98px minmax(110px, 0.7fr) minmax(0, 1.4fr) auto;
-  align-items: center;
+  align-items: end;
   gap: 8px;
 }
 
@@ -1212,7 +1277,9 @@
   padding: 8px 12px;
   font-size: 12.5px;
   min-height: 38px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .external-url-row input:focus {

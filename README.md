@@ -66,6 +66,12 @@ npx.cmd wrangler@4 deploy --config cloudflare/wrangler.jsonc --secrets-file .clo
 
 “公开展示”只控制页面是否显示记录，**不构成访问权限控制**：内容 JSON 和图片仍在静态站点/仓库里。不公开的记录应另外保存在私人笔记中。默认示例记录和图片不是真实观演经历，管理页可一键移除示例。
 
+## AI 批量录入（MCP）
+
+本机已提供 `concshow` MCP，供 Codex 查询、批量新增或修改音乐会、上传图片和发布到 GitHub。一次最多录入 100 场，自动校验、跳过重复并保存备份；图片复用现有 R2。写入保存到本地档案，发布工具才会更新线上内容。
+
+接入和使用示例见 [音乐会 MCP 文档](mcp/README.md)。运行 `npm run mcp:check` 检查连接。首次接入后重启 Codex，然后可以直接让 AI 从文字、海报、票根或整理后的表格批量录入。
+
 ## 检查
 
 ```powershell
