@@ -61,9 +61,14 @@ describe('poster deck motion', () => {
 describe('record filters', () => {
   const records = archiveSchema.parse(archiveFixture).records
 
-  it('reads only string query values and matches keywords case-insensitively', () => {
+  it('reads only string query values and matches keywords case-insensitively across credits and status', () => {
     const filters = readFilters({ q: ' LIVEHOUSE ', year: ['2025'] })
     expect(filters.year).toBe('')
     expect(filterRecords(records, filters).map((record) => record.id)).toEqual(['test-livehouse'])
+    const upcoming = filterRecords(
+      [{ ...records[0]!, status: 'upcoming', conductor: '小泽征尔', soloists: ['马友友'] }],
+      { q: '马友友', year: '', city: '', type: '', status: 'upcoming' }
+    )
+    expect(upcoming).toHaveLength(1)
   })
 })

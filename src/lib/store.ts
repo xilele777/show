@@ -90,6 +90,7 @@ export async function discardDraft() {
   await markSaved(archive.value!)
 }
 export function imageUrl(path: string): string {
+  if (/^https:\/\//i.test(path)) return path
   const pending = pendingAssets.value.find((asset) => asset.path === path)
   return pending
     ? `data:image/${path.endsWith('.webp') ? 'webp' : path.endsWith('.png') ? 'png' : 'jpeg'};base64,${pending.base64}`

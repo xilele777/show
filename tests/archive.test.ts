@@ -55,13 +55,26 @@ describe('archive content boundaries', () => {
   it('rejects invalid calendar dates', () => {
     expect(recordSchema.safeParse({ ...data.records[0], date: '2025-02-30' }).success).toBe(false)
   })
-  it('rejects path traversal and duplicated IDs', () => {
+  it('rejects path traversal, non-HTTPS external URLs, and duplicated IDs, while accepting HTTPS R2 URLs and rich concert fields', () => {
     expect(recordSchema.safeParse({ ...data.records[0], images: ['uploads/../archive.json'] }).success).toBe(
       false
     )
     expect(
-      recordSchema.safeParse({ ...data.records[0], images: ['https://example.com/x.jpg'] }).success
+      recordSchema.safeParse({ ...data.records[0], images: ['http://example.com/x.jpg'] }).success
     ).toBe(false)
+    expect(
+      recordSchema.safeParse({
+        ...data.records[0],
+        images: ['https://pub-demo.r2.dev/uploads/concert.webp'],
+        orchestra: '维也纳爱乐乐团',
+        conductor: '古斯塔沃·杜达梅尔',
+        soloists: ['王羽佳', '卡瓦科斯'],
+        seat: '1层 6排 12座',
+        price: '¥1280',
+        status: 'upcoming',
+        program: [{ title: '第五交响曲', composer: '柴可夫斯基', half: '下半场' }]
+      }).success
+    ).toBe(true)
     expect(archiveSchema.safeParse({ ...data, records: [data.records[0], data.records[0]] }).success).toBe(
       false
     )
