@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Star } from 'lucide-vue-next'
+import { ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Pause, Play, Star } from 'lucide-vue-next'
 import type { ConcertRecord } from '../lib/schema'
 import { imageUrl } from '../lib/store'
 import {
+  buildDeckSlots,
   cardPose,
   circularOffset,
   clamp,
@@ -26,13 +27,17 @@ const stageEl = ref<HTMLElement>()
 const deckEl = ref<HTMLElement>()
 const railEl = ref<HTMLElement>()
 const activeIndex = ref(0)
+const activeSlot = ref(0)
 const glowIndex = ref(0)
 const statusText = ref('')
 const isDragging = ref(false)
+const autoGlide = ref(true)
 const indicator = ref({ x: 0, ready: false })
 
 const total = computed(() => props.records.length)
-const canLoop = computed(() => props.records.length >= 3)
+const slots = computed(() => buildDeckSlots(props.records, 11))
+const slotCount = computed(() => slots.value.length)
+const canLoop = computed(() => props.records.length >= 2)
 const activeRecord = computed(() => props.records[activeIndex.value] ?? props.records[0])
 const glowRecord = computed(() => props.records[glowIndex.value] ?? activeRecord.value)
 
@@ -40,11 +45,14 @@ const cardEls: (HTMLElement | null)[] = []
 const thumbEls: (HTMLElement | null)[] = []
 const hoverLift: number[] = []
 
+const GLIDE_SPEED = 0.14
+const PANORAMA_RANGE = 5.4
+
 let position = 0
 let velocity = 0
 let target = 0
-let motion: 'idle' | 'spring' | 'direct' = 'idle'
-let unit = 215
+let motion: 'idle' | 'spring' | 'direct' | 'glide' = 'idle'
+let unit = 205
 let intro = 1
 let introFrom = 1
 let introStart = 0
@@ -55,8 +63,10 @@ let tiltX = 0
 let tiltY = 0
 let tiltTargetX = 0
 let tiltTargetY = 0
-let hoverIndex = -1
+let hoverSlot = -1
 let reduceMotion = false
+let pointerInside = false
+let focusInside = false
 let mounted = false
 
 let pointerId = -1
@@ -74,6 +84,7 @@ let statusTimer: ReturnType<typeof setTimeout> | undefined
 let glowTimer: ReturnType<typeof setTimeout> | undefined
 let thumbTimer: ReturnType<typeof setTimeout> | undefined
 let clickTimer: ReturnType<typeof setTimeout> | undefined
+let glideTimer: ReturnType<typeof setTimeout> | undefined
 let motionQuery: MediaQueryList | undefined
 
 function setCardEl(el: unknown, index: number) {
@@ -84,9 +95,49 @@ function setThumbEl(el: unknown, index: number) {
   thumbEls[index] = el instanceof HTMLElement ? el : null
 }
 
-function normalize(index: number): number {
-  if (canLoop.value) return wrapIndex(index, total.value)
-  return clamp(Math.round(index), 0, Math.max(0, total.value - 1))
+function hasOpenDialog(): boolean {
+  return typeof document !== 'undefined' && Boolean(document.querySelector('dialog[open]'))
+}
+
+function canAutoGlide(): boolean {
+  return (
+    mounted &&
+    autoGlide.value &&
+    !reduceMotion &&
+    canLoop.value &&
+    !pointerInside &&
+    !focusInside &&
+    !isDragging.value &&
+    !hasOpenDialog() &&
+    document.visibilityState !== 'hidden'
+  )
+}
+
+function scheduleGlideResume(delay = 2200) {
+  clearTimeout(glideTimer)
+  if (!autoGlide.value || reduceMotion || !canLoop.value) return
+  glideTimer = setTimeout(() => {
+    if (!canAutoGlide() || motion === 'direct') return
+    motion = 'glide'
+    kick()
+  }, delay)
+}
+
+function toggleAutoGlide() {
+  autoGlide.value = !autoGlide.value
+  if (autoGlide.value) {
+    scheduleGlideResume(260)
+  } else {
+    clearTimeout(glideTimer)
+    if (motion === 'glide') springTo(Math.round(position))
+  }
+}
+
+function normalizeSlot(slotPos: number): number {
+  const count = slotCount.value
+  if (!count) return 0
+  if (canLoop.value) return wrapIndex(slotPos, count)
+  return clamp(Math.round(slotPos), 0, Math.max(0, count - 1))
 }
 
 function announce(index: number) {
@@ -97,37 +148,58 @@ function announce(index: number) {
   }, 220)
 }
 
-function setActive(index: number) {
-  const next = normalize(index)
-  if (next === activeIndex.value) return
-  activeIndex.value = next
-  announce(next)
+function setActiveSlot(slotPos: number) {
+  const nextSlot = normalizeSlot(slotPos)
+  activeSlot.value = nextSlot
+  const nextRecord = slots.value[nextSlot]?.recordIndex ?? 0
+  if (nextRecord !== activeIndex.value) {
+    activeIndex.value = nextRecord
+    announce(nextRecord)
+  }
 }
 
 function boundTarget(value: number): number {
-  return canLoop.value ? value : clamp(value, 0, total.value - 1)
+  return canLoop.value ? value : clamp(value, 0, Math.max(0, slotCount.value - 1))
 }
 
 function springTo(next: number) {
   clearTimeout(wheelTimer)
+  clearTimeout(glideTimer)
   target = boundTarget(next)
   motion = 'spring'
-  setActive(target)
+  setActiveSlot(target)
   kick()
+  scheduleGlideResume(2600)
 }
 
-function goTo(index: number) {
-  if (!total.value) return
-  const base = Math.round(target)
+function goToSlot(slotIndex: number) {
+  if (!slotCount.value) return
+  const base = Math.round(position)
   const next = canLoop.value
-    ? base + Math.round(circularOffset(index, base, total.value, true))
-    : index
+    ? base + Math.round(circularOffset(slotIndex, base, slotCount.value, true))
+    : slotIndex
   springTo(next)
+}
+
+function goToRecord(recordIndex: number) {
+  if (!total.value || !slotCount.value) return
+  const base = Math.round(position)
+  let bestSlot = recordIndex
+  let bestDist = Infinity
+  for (let i = 0; i < slotCount.value; i++) {
+    if (slots.value[i]?.recordIndex !== recordIndex) continue
+    const dist = Math.abs(circularOffset(i, base, slotCount.value, canLoop.value))
+    if (dist < bestDist) {
+      bestDist = dist
+      bestSlot = i
+    }
+  }
+  goToSlot(bestSlot)
 }
 
 function step(delta: number) {
   if (total.value <= 1) return
-  const base = Math.round(target)
+  const base = Math.round(motion === 'spring' ? target : position)
   const next = boundTarget(base + delta)
   if (next === base) {
     velocity -= delta * 2.4
@@ -146,22 +218,22 @@ function startIntro(from: number) {
   intro = from
   introFrom = from
   introStart = performance.now()
-  introDuration = from <= 0 ? 1100 : 620
+  introDuration = from <= 0 ? 1050 : 580
 }
 
 function measure() {
   const card = cardEls.find(Boolean)
-  if (card?.offsetWidth) unit = clamp(card.offsetWidth * 0.8, 140, 215)
+  if (card?.offsetWidth) unit = clamp(card.offsetWidth * 0.78, 140, 210)
 }
 
 function render() {
-  const n = total.value
+  const n = slotCount.value
   const loop = canLoop.value
-  const active = activeIndex.value
+  const active = activeSlot.value
   for (let i = 0; i < n; i++) {
     const el = cardEls[i]
     if (!el) continue
-    const pose = cardPose(circularOffset(i, position, n, loop), unit, intro)
+    const pose = cardPose(circularOffset(i, position, n, loop), unit, intro, PANORAMA_RANGE)
     const lift = hoverLift[i] ?? 0
     const tx = i === active ? tiltX : 0
     const ty = i === active ? tiltY : 0
@@ -181,7 +253,21 @@ function tick(now: number) {
   lastTime = now
   let busy = false
 
-  if (motion === 'spring') {
+  if (motion === 'glide') {
+    if (!canAutoGlide()) {
+      motion = 'spring'
+      target = boundTarget(Math.round(position))
+      velocity = 0
+      setActiveSlot(target)
+      busy = true
+    } else {
+      const count = slotCount.value
+      position = ((position + GLIDE_SPEED * dt) % count + count) % count
+      target = position
+      setActiveSlot(Math.round(position))
+      busy = true
+    }
+  } else if (motion === 'spring') {
     if (reduceMotion) {
       position = target
       velocity = 0
@@ -219,8 +305,8 @@ function tick(now: number) {
     tiltY = tiltTargetY
   }
 
-  for (let i = 0; i < total.value; i++) {
-    const goal = i === hoverIndex && i !== activeIndex.value && !isDragging.value ? 1 : 0
+  for (let i = 0; i < slotCount.value; i++) {
+    const goal = i === hoverSlot && i !== activeSlot.value && !isDragging.value ? 1 : 0
     const current = hoverLift[i] ?? 0
     const next = current + (goal - current) * k
     if (Math.abs(goal - next) > 0.002) {
@@ -242,18 +328,20 @@ function kick() {
 }
 
 function openRecord(record: ConcertRecord) {
+  clearTimeout(glideTimer)
   router.replace({ path: '/', query: { ...route.query, record: record.id } })
 }
 
-function handleCardClick(record: ConcertRecord, index: number) {
+function handleCardClick(record: ConcertRecord, slotIndex: number) {
   if (suppressClick) return
-  if (index === activeIndex.value && Math.abs(position - target) < 0.2) openRecord(record)
-  else goTo(index)
+  const dist = Math.abs(circularOffset(slotIndex, position, slotCount.value, canLoop.value))
+  if (slotIndex === activeSlot.value && dist < 0.35) openRecord(record)
+  else goToSlot(slotIndex)
 }
 
 function dragPosition(value: number): number {
   if (canLoop.value) return value
-  const max = total.value - 1
+  const max = Math.max(0, slotCount.value - 1)
   if (value < 0) return -rubberBand(-value)
   if (value > max) return max + rubberBand(value - max)
   return value
@@ -262,6 +350,7 @@ function dragPosition(value: number): number {
 function onPointerDown(event: PointerEvent) {
   if (event.button !== 0 || total.value <= 1) return
   clearTimeout(clickTimer)
+  clearTimeout(glideTimer)
   suppressClick = false
   pointerActive = true
   pointerCaptured = false
@@ -273,9 +362,9 @@ function onPointerDown(event: PointerEvent) {
 function trackHover(event: PointerEvent) {
   if (event.pointerType !== 'mouse') return
   const card = (event.target as Element | null)?.closest<HTMLElement>('.poster-card')
-  const index = card ? Number(card.dataset.index) : -1
-  hoverIndex = index
-  if (card && index === activeIndex.value && !reduceMotion) {
+  const slotIdx = card ? Number(card.dataset.slot) : -1
+  hoverSlot = slotIdx
+  if (card && slotIdx === activeSlot.value && !reduceMotion) {
     const rect = card.getBoundingClientRect()
     const px = clamp((event.clientX - rect.left) / rect.width, 0, 1)
     const py = clamp((event.clientY - rect.top) / rect.height, 0, 1)
@@ -304,6 +393,7 @@ function onPointerMove(event: PointerEvent) {
       isDragging.value = true
       suppressClick = true
       clearTimeout(wheelTimer)
+      clearTimeout(glideTimer)
       deckEl.value?.setPointerCapture?.(event.pointerId)
       dragOriginX = event.clientX
       dragStartPos = position
@@ -312,7 +402,7 @@ function onPointerMove(event: PointerEvent) {
       samples.length = 0
       tiltTargetX = 0
       tiltTargetY = 0
-      hoverIndex = -1
+      hoverSlot = -1
     } else if (Math.abs(dy) > 10) {
       pointerActive = false
       return
@@ -323,7 +413,7 @@ function onPointerMove(event: PointerEvent) {
 
   position = dragPosition(dragStartPos - (event.clientX - dragOriginX) / unit)
   target = boundTarget(Math.round(position))
-  setActive(target)
+  setActiveSlot(target)
   samples.push({ t: event.timeStamp, p: position })
   while (samples.length > 2 && event.timeStamp - samples[0]!.t > 110) samples.shift()
   kick()
@@ -354,10 +444,36 @@ function onPointerUp(event: PointerEvent) {
 }
 
 function onDeckLeave() {
-  hoverIndex = -1
+  hoverSlot = -1
   tiltTargetX = 0
   tiltTargetY = 0
   kick()
+}
+
+function onStagePointerEnter(event: PointerEvent) {
+  if (event.pointerType !== 'mouse') return
+  pointerInside = true
+  clearTimeout(glideTimer)
+  if (motion === 'glide') springTo(Math.round(position))
+}
+
+function onStagePointerLeave(event: PointerEvent) {
+  if (event.pointerType !== 'mouse') return
+  pointerInside = false
+  scheduleGlideResume(1600)
+}
+
+function onStageFocusIn() {
+  focusInside = true
+  clearTimeout(glideTimer)
+  if (motion === 'glide') springTo(Math.round(position))
+}
+
+function onStageFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget as Node | null
+  if (next && stageEl.value?.contains(next)) return
+  focusInside = false
+  scheduleGlideResume(1800)
 }
 
 function onWheel(event: WheelEvent) {
@@ -378,9 +494,10 @@ function onWheel(event: WheelEvent) {
 
   if (!canLoop.value && !horizontal && motion !== 'direct') {
     const base = Math.round(target)
-    if ((delta < 0 && base <= 0) || (delta > 0 && base >= total.value - 1)) return
+    if ((delta < 0 && base <= 0) || (delta > 0 && base >= slotCount.value - 1)) return
   }
   event.preventDefault()
+  clearTimeout(glideTimer)
 
   const notch = event.deltaMode !== 0 || (!horizontal && event.deltaX === 0 && Math.abs(delta) >= 48)
   if (notch) {
@@ -397,7 +514,7 @@ function onWheel(event: WheelEvent) {
   }
   position = dragPosition(position + clamp(delta, -90, 90) / (unit * 1.15))
   target = boundTarget(Math.round(position))
-  setActive(target)
+  setActiveSlot(target)
   kick()
   clearTimeout(wheelTimer)
   wheelTimer = setTimeout(() => springTo(Math.round(position)), 120)
@@ -410,7 +527,7 @@ function isTypingTarget(el: EventTarget | null): boolean {
 
 function onWindowKeydown(event: KeyboardEvent) {
   if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return
-  if (isTypingTarget(event.target) || document.querySelector('dialog[open]')) return
+  if (isTypingTarget(event.target) || hasOpenDialog()) return
   const inStage = Boolean(stageEl.value?.contains(document.activeElement))
   switch (event.key) {
     case 'ArrowRight':
@@ -421,11 +538,11 @@ function onWindowKeydown(event: KeyboardEvent) {
       break
     case 'Home':
       if (!inStage) return
-      goTo(0)
+      goToRecord(0)
       break
     case 'End':
       if (!inStage) return
-      goTo(total.value - 1)
+      goToRecord(total.value - 1)
       break
     case 'Enter':
       if (document.activeElement !== stageEl.value || !activeRecord.value) return
@@ -440,7 +557,7 @@ function onWindowKeydown(event: KeyboardEvent) {
 function onThumbEnter(event: PointerEvent, index: number) {
   if (event.pointerType !== 'mouse') return
   clearTimeout(thumbTimer)
-  thumbTimer = setTimeout(() => goTo(index), 90)
+  thumbTimer = setTimeout(() => goToRecord(index), 90)
 }
 
 function onThumbLeave() {
@@ -469,6 +586,16 @@ function onResize() {
 
 function onMotionChange() {
   reduceMotion = Boolean(motionQuery?.matches)
+  if (reduceMotion && motion === 'glide') springTo(Math.round(position))
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'hidden') {
+    clearTimeout(glideTimer)
+    if (motion === 'glide') springTo(Math.round(position))
+  } else {
+    scheduleGlideResume(1200)
+  }
 }
 
 watch(
@@ -476,6 +603,7 @@ watch(
   (list, oldList) => {
     if (!list.length) {
       activeIndex.value = 0
+      activeSlot.value = 0
       return
     }
     let index = -1
@@ -489,14 +617,16 @@ watch(
       if (index < 0) index = Math.min(activeIndex.value, list.length - 1)
     }
     clearTimeout(wheelTimer)
+    clearTimeout(glideTimer)
     position = index
     target = index
     velocity = 0
     motion = 'idle'
     activeIndex.value = index
+    activeSlot.value = index
     glowIndex.value = index
     hoverLift.length = 0
-    cardEls.length = list.length
+    cardEls.length = slotCount.value
     thumbEls.length = list.length
     startIntro(oldList && oldList.length ? 0.55 : 0)
     if (mounted) {
@@ -505,6 +635,7 @@ watch(
         render()
         syncRail()
         kick()
+        scheduleGlideResume(1600)
       })
     }
   },
@@ -522,9 +653,13 @@ watch(activeIndex, (index) => {
 watch(
   () => route.query.record,
   (id) => {
-    if (typeof id !== 'string') return
+    if (typeof id !== 'string') {
+      scheduleGlideResume(1500)
+      return
+    }
+    clearTimeout(glideTimer)
     const index = props.records.findIndex((r) => r.id === id)
-    if (index >= 0 && index !== activeIndex.value) goTo(index)
+    if (index >= 0 && index !== activeIndex.value) goToRecord(index)
   }
 )
 
@@ -537,10 +672,12 @@ onMounted(() => {
   stageEl.value?.addEventListener('wheel', onWheel, { passive: false })
   window.addEventListener('keydown', onWindowKeydown)
   window.addEventListener('resize', onResize, { passive: true })
+  document.addEventListener('visibilitychange', onVisibilityChange)
   measure()
   render()
   syncRail()
   kick()
+  scheduleGlideResume(1500)
 })
 
 onUnmounted(() => {
@@ -550,12 +687,14 @@ onUnmounted(() => {
   stageEl.value?.removeEventListener('wheel', onWheel)
   window.removeEventListener('keydown', onWindowKeydown)
   window.removeEventListener('resize', onResize)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
   motionQuery?.removeEventListener('change', onMotionChange)
   clearTimeout(statusTimer)
   clearTimeout(glowTimer)
   clearTimeout(thumbTimer)
   clearTimeout(wheelTimer)
   clearTimeout(clickTimer)
+  clearTimeout(glideTimer)
 })
 </script>
 
@@ -568,6 +707,10 @@ onUnmounted(() => {
     aria-roledescription="carousel"
     aria-label="观演海报翻阅舞台"
     tabindex="0"
+    @pointerenter="onStagePointerEnter"
+    @pointerleave="onStagePointerLeave"
+    @focusin="onStageFocusIn"
+    @focusout="onStageFocusOut"
   >
     <div class="stage-poster-glow" aria-hidden="true">
       <Transition name="glow-fade">
@@ -586,7 +729,6 @@ onUnmounted(() => {
       type="button"
       class="deck-nav deck-nav--prev icon-button"
       aria-label="上一张海报"
-      :disabled="!canLoop && activeIndex === 0"
       @click="step(-1)"
     >
       <ChevronLeft :size="20" />
@@ -597,7 +739,6 @@ onUnmounted(() => {
       type="button"
       class="deck-nav deck-nav--next icon-button"
       aria-label="下一张海报"
-      :disabled="!canLoop && activeIndex === records.length - 1"
       @click="step(1)"
     >
       <ChevronRight :size="20" />
@@ -614,31 +755,35 @@ onUnmounted(() => {
       @pointerleave="onDeckLeave"
     >
       <button
-        v-for="(record, index) in records"
-        :key="record.id"
-        :ref="(el) => setCardEl(el, index)"
+        v-for="slot in slots"
+        :key="slot.slotIndex"
+        :ref="(el) => setCardEl(el, slot.slotIndex)"
         type="button"
         class="poster-card"
-        :class="{ 'is-active': index === activeIndex }"
-        :data-index="index"
-        role="group"
-        aria-roledescription="slide"
-        :aria-label="`${index + 1} / ${records.length}：${record.title}`"
-        @click="handleCardClick(record, index)"
+        :class="{ 'is-active': slot.slotIndex === activeSlot }"
+        :data-slot="slot.slotIndex"
+        :tabindex="slot.duplicate ? -1 : undefined"
+        :aria-hidden="slot.duplicate ? 'true' : undefined"
+        :role="slot.duplicate ? undefined : 'group'"
+        :aria-roledescription="slot.duplicate ? undefined : 'slide'"
+        :aria-label="
+          slot.duplicate ? undefined : `${slot.recordIndex + 1} / ${records.length}：${slot.item.title}`
+        "
+        @click="handleCardClick(slot.item, slot.slotIndex)"
       >
         <img
-          v-if="record.images[0]"
-          :src="imageUrl(record.images[0])"
-          :alt="record.title"
+          v-if="slot.item.images[0]"
+          :src="imageUrl(slot.item.images[0])"
+          :alt="slot.duplicate ? '' : slot.item.title"
           decoding="async"
           draggable="false"
         />
         <div v-else class="poster-fallback">
-          <span>{{ record.type }}</span>
-          <strong>{{ record.title }}</strong>
+          <span>{{ slot.item.type }}</span>
+          <strong>{{ slot.item.title }}</strong>
         </div>
 
-        <span class="poster-pill">{{ record.type }}</span>
+        <span class="poster-pill">{{ slot.item.type }}</span>
         <span class="poster-open-pill" aria-hidden="true">
           <ArrowUpRight :size="16" />
         </span>
@@ -656,18 +801,17 @@ onUnmounted(() => {
               <span class="meta-sep">·</span>
               <span>{{ activeRecord.venue }}</span>
             </template>
-            <span class="meta-sep">·</span>
-            <span
-              class="rating"
-              :aria-label="activeRecord.rating ? `评分 ${activeRecord.rating} / 5` : '尚未评分'"
-            >
-              <Star
-                v-for="star in 5"
-                :key="star"
-                :size="12"
-                :class="{ filled: star <= activeRecord.rating }"
-              />
-            </span>
+            <template v-if="activeRecord.rating > 0">
+              <span class="meta-sep">·</span>
+              <span class="rating" :aria-label="`评分 ${activeRecord.rating} / 5`">
+                <Star
+                  v-for="star in 5"
+                  :key="star"
+                  :size="12"
+                  :class="{ filled: star <= activeRecord.rating }"
+                />
+              </span>
+            </template>
           </div>
 
           <button type="button" class="poster-title-btn" @click="openRecord(activeRecord)">
@@ -680,6 +824,17 @@ onUnmounted(() => {
               {{ String(activeIndex + 1).padStart(2, '0') }} /
               {{ String(records.length).padStart(2, '0') }}
             </span>
+            <button
+              v-if="records.length > 1"
+              type="button"
+              class="glide-toggle"
+              :aria-label="autoGlide ? '暂停连续漫游' : '开启连续漫游'"
+              :title="autoGlide ? '暂停连续漫游' : '开启连续漫游'"
+              @click="toggleAutoGlide"
+            >
+              <Pause v-if="autoGlide" :size="11" />
+              <Play v-else :size="11" />
+            </button>
           </div>
         </div>
       </Transition>
@@ -702,7 +857,7 @@ onUnmounted(() => {
         :aria-current="index === activeIndex ? 'true' : undefined"
         :aria-label="record.title"
         :title="record.title"
-        @click="goTo(index)"
+        @click="goToRecord(index)"
         @pointerenter="onThumbEnter($event, index)"
         @pointerleave="onThumbLeave"
       >

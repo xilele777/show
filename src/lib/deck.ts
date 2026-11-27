@@ -27,23 +27,52 @@ export function circularOffset(index: number, position: number, total: number, l
   return diff
 }
 
-export function cardPose(rel: number, unit: number, intro = 1): CardPose {
+export interface DeckSlot<T> {
+  item: T
+  recordIndex: number
+  slotIndex: number
+  duplicate: boolean
+}
+
+export function buildDeckSlots<T>(items: T[], minSlots = 11): DeckSlot<T>[] {
+  const count = items.length
+  if (count === 0) return []
+  if (count === 1) {
+    return [{ item: items[0]!, recordIndex: 0, slotIndex: 0, duplicate: false }]
+  }
+  const cycles = Math.max(1, Math.ceil(minSlots / count))
+  const slots: DeckSlot<T>[] = []
+  for (let s = 0; s < count * cycles; s++) {
+    const recordIndex = s % count
+    slots.push({
+      item: items[recordIndex]!,
+      recordIndex,
+      slotIndex: s,
+      duplicate: s >= count
+    })
+  }
+  return slots
+}
+
+export function cardPose(rel: number, unit: number, intro = 1, maxAbs = 3.1): CardPose {
   const abs = Math.abs(rel)
-  const clamped = Math.min(abs, 3.2)
+  const clamped = Math.min(abs, maxAbs + 0.1)
   const sign = Math.sign(rel)
-  const visible = abs <= 3.1
-  const spread = Math.min(abs, 1) * unit + Math.max(0, abs - 1) * unit * 0.58
-  const edgeOpacity = abs <= 2.2 ? 1 : Math.max(0, 1 - (abs - 2.2) * 1.1)
+  const visible = abs <= maxAbs
+  const outerRatio = maxAbs > 3.5 ? 0.72 : 0.58
+  const spread = Math.min(abs, 1) * unit + Math.max(0, abs - 1) * unit * outerRatio
+  const fadeStart = Math.max(2.2, maxAbs - 1.2)
+  const edgeOpacity = abs <= fadeStart ? 1 : Math.max(0, 1 - (abs - fadeStart) / Math.max(0.4, maxAbs - fadeStart))
   const introOpacity = abs < 0.5 ? 1 : clamp(intro * intro, 0, 1)
 
   return {
     x: sign * spread * intro,
-    z: -clamped * 115,
-    rotateY: -clamp(rel * 24, -34, 34) * intro,
-    scale: Math.max(0.68, 1 - clamped * 0.13) * (0.94 + 0.06 * intro),
-    shade: Math.min(0.48, clamped * 0.16),
+    z: -clamped * (maxAbs > 3.5 ? 82 : 115),
+    rotateY: -clamp(rel * (maxAbs > 3.5 ? 18 : 24), -34, 34) * intro,
+    scale: Math.max(0.62, 1 - clamped * (maxAbs > 3.5 ? 0.082 : 0.13)) * (0.94 + 0.06 * intro),
+    shade: Math.min(0.54, clamped * (maxAbs > 3.5 ? 0.1 : 0.16)),
     opacity: visible ? edgeOpacity * introOpacity : 0,
-    zIndex: Math.round(50 - clamped * 10),
+    zIndex: Math.round(60 - clamped * 8),
     visible
   }
 }
