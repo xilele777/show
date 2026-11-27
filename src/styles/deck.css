@@ -49,10 +49,10 @@
 
 .poster-deck {
   position: relative;
-  height: clamp(330px, 46vh, 450px);
+  height: clamp(370px, 53vh, 510px);
   display: grid;
   place-items: center;
-  perspective: 1600px;
+  perspective: 1650px;
   touch-action: pan-y;
   overscroll-behavior: contain;
   user-select: none;
@@ -72,7 +72,7 @@
 
 .poster-card {
   position: absolute;
-  height: clamp(300px, 42vh, 410px);
+  height: clamp(340px, 49vh, 470px);
   aspect-ratio: 2 / 3;
   padding: 0;
   border-radius: 18px;
@@ -200,7 +200,7 @@
 
 .deck-nav {
   position: absolute;
-  top: calc(clamp(325px, 45vh, 440px) / 2);
+  top: calc(clamp(370px, 53vh, 510px) / 2);
   transform: translateY(-50%);
   z-index: 10;
   width: 44px;
@@ -439,10 +439,10 @@
 
 @media (max-width: 720px) {
   .poster-deck {
-    height: clamp(320px, 50vh, 410px);
+    height: clamp(350px, 52vh, 440px);
   }
   .poster-card {
-    height: clamp(290px, 46vh, 380px);
+    height: clamp(320px, 48vh, 410px);
   }
   .deck-nav {
     display: none;

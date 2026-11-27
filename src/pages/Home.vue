@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowUpRight,
@@ -7,6 +7,7 @@ import {
   Disc3,
   GalleryHorizontalEnd,
   List,
+  ListFilter,
   MapPin,
   Search as SearchIcon,
   Star,
@@ -22,11 +23,16 @@ const route = useRoute()
 const router = useRouter()
 
 const mode = ref<'deck' | 'timeline'>('deck')
+const hudReady = ref(false)
 const filters = computed(() => readFilters(route.query))
 const query = computed(() => filters.value.q)
 const year = computed(() => filters.value.year)
 const city = computed(() => filters.value.city)
 const type = computed(() => filters.value.type)
+
+onMounted(() => {
+  hudReady.value = true
+})
 
 async function updateQuery(next: Record<string, unknown>, animate: boolean) {
   const apply = async () => {
@@ -73,106 +79,136 @@ const timelineGroups = computed(() => {
 </script>
 
 <template>
-  <div class="page-width archive-stage">
-    <search class="filter-dock" aria-label="筛选观演档案">
-      <div class="filter-pills" role="group" aria-label="按演出类型筛选">
+  <Teleport v-if="hudReady" to="#hud-slot">
+    <div class="hud-home-controls">
+      <button
+        v-if="filtered"
+        type="button"
+        class="icon-button hud-icon-btn filter-clear-pill"
+        aria-label="清除筛选"
+        title="清除筛选"
+        @click="resetFilters"
+      >
+        <X :size="14" />
+      </button>
+
+      <button
+        type="button"
+        popovertarget="filter-popover"
+        class="icon-button hud-icon-btn filter-trigger-btn"
+        :class="{ 'has-active': filtered }"
+        aria-label="筛选观演档案"
+        title="筛选"
+      >
+        <ListFilter :size="15" />
+      </button>
+
+      <div class="view-switch hud-view-switch" role="group" aria-label="切换展示方式">
         <button
           type="button"
-          class="filter-pill"
-          :class="{ selected: !type }"
-          :aria-pressed="!type"
-          @click="applyFilter('type', '')"
+          :class="{ selected: mode === 'deck' }"
+          :aria-pressed="mode === 'deck'"
+          aria-label="海报翻阅视图"
+          title="海报翻阅"
+          @click="switchMode('deck')"
         >
-          全部 <span>{{ visibleRecords.length }}</span>
+          <GalleryHorizontalEnd :size="14" />
         </button>
         <button
-          v-for="item in eventTypes"
-          :key="item"
           type="button"
-          class="filter-pill"
-          :class="{ selected: type === item }"
-          :aria-pressed="type === item"
-          @click="applyFilter('type', item)"
+          :class="{ selected: mode === 'timeline' }"
+          :aria-pressed="mode === 'timeline'"
+          aria-label="时光轴视图"
+          title="时光轴"
+          @click="switchMode('timeline')"
         >
-          {{ item }}
+          <List :size="15" />
         </button>
       </div>
+    </div>
+  </Teleport>
 
-      <div class="filter-controls">
-        <label class="search-box">
-          <SearchIcon :size="14" />
-          <input
-            type="search"
-            :value="query"
-            placeholder="搜索演出、音乐人、标签"
-            aria-label="搜索观演档案"
-            @input="applyFilter('q', ($event.target as HTMLInputElement).value)"
-          />
-        </label>
-
-        <span class="select-wrap">
-          <select
-            class="select-control filter-select"
-            aria-label="按年份筛选"
-            :value="year"
-            @change="applyFilter('year', ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="">全部年份</option>
-            <option v-for="item in years" :key="item" :value="item">{{ item }}</option>
-          </select>
-          <ChevronDown :size="13" class="select-chevron" aria-hidden="true" />
-        </span>
-
-        <span class="select-wrap">
-          <select
-            class="select-control filter-select"
-            aria-label="按城市筛选"
-            :value="city"
-            @change="applyFilter('city', ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="">全部城市</option>
-            <option v-for="item in cities" :key="item" :value="item">{{ item }}</option>
-          </select>
-          <ChevronDown :size="13" class="select-chevron" aria-hidden="true" />
-        </span>
-
+  <search id="filter-popover" popover="auto" class="filter-popover" aria-label="筛选观演档案">
+    <div class="filter-popover-head">
+      <span>筛选</span>
+      <div class="filter-popover-head-right">
+        <span class="filter-count">{{ records.length }} / {{ visibleRecords.length }}</span>
         <button
           v-if="filtered"
           type="button"
-          class="filter-reset"
-          aria-label="清除筛选"
-          title="清除筛选"
+          class="filter-clear-link"
           @click="resetFilters"
         >
-          <X :size="14" />
+          重置
         </button>
-
-        <div class="view-switch" role="group" aria-label="切换展示方式">
-          <button
-            type="button"
-            :class="{ selected: mode === 'deck' }"
-            :aria-pressed="mode === 'deck'"
-            aria-label="海报翻阅视图"
-            title="海报翻阅"
-            @click="switchMode('deck')"
-          >
-            <GalleryHorizontalEnd :size="15" />
-          </button>
-          <button
-            type="button"
-            :class="{ selected: mode === 'timeline' }"
-            :aria-pressed="mode === 'timeline'"
-            aria-label="时光轴视图"
-            title="时光轴"
-            @click="switchMode('timeline')"
-          >
-            <List :size="16" />
-          </button>
-        </div>
       </div>
-    </search>
+    </div>
 
-    <!-- 3D Poster Flip Deck -->
+    <div class="filter-pills" role="group" aria-label="按演出类型筛选">
+      <button
+        type="button"
+        class="filter-pill"
+        :class="{ selected: !type }"
+        :aria-pressed="!type"
+        @click="applyFilter('type', '')"
+      >
+        全部 <span>{{ visibleRecords.length }}</span>
+      </button>
+      <button
+        v-for="item in eventTypes"
+        :key="item"
+        type="button"
+        class="filter-pill"
+        :class="{ selected: type === item }"
+        :aria-pressed="type === item"
+        @click="applyFilter('type', item)"
+      >
+        {{ item }}
+      </button>
+    </div>
+
+    <label class="search-box">
+      <SearchIcon :size="14" />
+      <input
+        type="search"
+        :value="query"
+        placeholder="搜索演出、音乐人、标签"
+        aria-label="搜索观演档案"
+        @input="applyFilter('q', ($event.target as HTMLInputElement).value)"
+      />
+    </label>
+
+    <div class="filter-select-row">
+      <span class="select-wrap">
+        <select
+          class="select-control filter-select"
+          aria-label="按年份筛选"
+          :value="year"
+          @change="applyFilter('year', ($event.target as HTMLSelectElement).value)"
+        >
+          <option value="">全部年份</option>
+          <option v-for="item in years" :key="item" :value="item">{{ item }}</option>
+        </select>
+        <ChevronDown :size="13" class="select-chevron" aria-hidden="true" />
+      </span>
+
+      <span class="select-wrap">
+        <select
+          class="select-control filter-select"
+          aria-label="按城市筛选"
+          :value="city"
+          @change="applyFilter('city', ($event.target as HTMLSelectElement).value)"
+        >
+          <option value="">全部城市</option>
+          <option v-for="item in cities" :key="item" :value="item">{{ item }}</option>
+        </select>
+        <ChevronDown :size="13" class="select-chevron" aria-hidden="true" />
+      </span>
+    </div>
+  </search>
+
+  <div class="page-width archive-stage" :class="{ 'archive-stage--deck': mode === 'deck' && records.length }">
+    <!-- 3D Panoramic Poster Deck -->
     <PosterDeck v-if="records.length && mode === 'deck'" :records="records" />
 
     <!-- Timeline View -->

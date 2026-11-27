@@ -223,7 +223,7 @@ function startIntro(from: number) {
 
 function measure() {
   const card = cardEls.find(Boolean)
-  if (card?.offsetWidth) unit = clamp(card.offsetWidth * 0.78, 140, 210)
+  if (card?.offsetWidth) unit = clamp(card.offsetWidth * 0.78, 140, 238)
 }
 
 function render() {

@@ -1,72 +1,191 @@
-/* ---------- Archive Stage & Filter Toolbar ---------- */
+/* ---------- Archive Stage & Floating Filter Popover ---------- */
 .archive-stage {
-  padding: 2px 0 36px;
+  padding: 76px 0 48px;
 }
 
-.filter-dock {
-  display: flex;
-  flex-wrap: wrap;
+.archive-stage--deck {
+  min-height: 100svh;
+  padding: 44px 0 18px;
+  display: grid;
+  align-content: center;
+}
+
+.hud-home-controls {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px 14px;
-  padding: 4px 2px 14px;
-  margin-bottom: 10px;
+  gap: 7px;
 }
 
-.filter-reset {
-  width: 34px;
-  height: 34px;
+.filter-trigger-btn {
+  position: relative;
+}
+
+.filter-trigger-btn.has-active::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  background: var(--accent);
+}
+
+.filter-clear-pill {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  background: var(--accent-soft);
+}
+
+.hud-view-switch {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+
+.hud-view-switch button {
+  width: 30px;
+  height: 26px;
+  border-radius: 999px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line);
-  background: var(--surface);
   color: var(--muted);
-  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.filter-reset:hover {
-  border-color: var(--accent);
+.hud-view-switch button.selected {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Native Popover Filter Panel */
+.filter-popover {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--glass-strong);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: var(--shadow-lg);
+  color: var(--ink);
+  padding: 16px;
+  width: min(360px, calc(100vw - 28px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  transition:
+    opacity 0.22s ease,
+    transform 0.28s var(--ease-out-expo),
+    display 0.22s allow-discrete,
+    overlay 0.22s allow-discrete;
+}
+
+.filter-popover:not(:popover-open) {
+  display: none;
+}
+
+.filter-popover:popover-open {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@starting-style {
+  .filter-popover:popover-open {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-popover {
+    transform: none;
+    transition-duration: 0.12s;
+  }
+  .filter-popover:popover-open {
+    transform: none;
+  }
+}
+
+@supports (position-area: block-end) {
+  .filter-popover {
+    inset: auto;
+    margin: 10px 0 0;
+    position-area: block-end span-inline-start;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+}
+
+@supports not (position-area: block-end) {
+  .filter-popover {
+    position: fixed;
+    top: 62px;
+    right: 24px;
+    left: auto;
+    bottom: auto;
+    margin: 0;
+  }
+}
+
+.filter-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-popover-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.filter-clear-link {
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--accent);
-  background: var(--accent-soft);
 }
 
 .filter-pills {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  max-width: 100%;
-  padding-bottom: 1px;
-}
-
-.filter-pills::-webkit-scrollbar {
-  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .filter-pill {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 13px;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 500;
   color: var(--muted);
+  background: var(--surface-soft);
   border: 1px solid transparent;
   transition:
-    background-color 0.22s ease,
-    color 0.22s ease,
-    border-color 0.22s ease,
-    transform 0.22s var(--ease-out-expo);
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .filter-pill:hover {
   color: var(--ink);
-  background: var(--surface-soft);
 }
 
 .filter-pill.selected {
@@ -81,25 +200,18 @@
   opacity: 0.72;
 }
 
-.filter-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
 .search-box {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
+  height: 36px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--muted);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  width: 204px;
+  width: 100%;
 }
 
 .search-box:focus-within {
@@ -121,28 +233,15 @@
   color: var(--muted);
 }
 
-.view-switch {
-  display: inline-flex;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-}
-
-.view-switch button {
-  width: 32px;
-  height: 26px;
-  border-radius: 999px;
+.filter-select-row {
   display: grid;
-  place-items: center;
-  color: var(--muted);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
-.view-switch button.selected {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-sm);
+.filter-select-row .select-wrap,
+.filter-select-row .select-control {
+  width: 100%;
 }
 
 /* ---------- View Transitions API for Cards ---------- */
@@ -491,6 +590,18 @@
 }
 
 @media (max-width: 720px) {
+  .archive-stage {
+    padding: 64px 0 36px;
+  }
+  .archive-stage--deck {
+    padding: 40px 0 16px;
+  }
+  @supports not (position-area: block-end) {
+    .filter-popover {
+      top: 56px;
+      right: 14px;
+    }
+  }
   .timeline-year {
     grid-template-columns: 1fr;
     gap: 14px;
@@ -528,12 +639,5 @@
   }
   .timeline-sep {
     display: none;
-  }
-  .search-box {
-    flex: 1 1 180px;
-    width: auto;
-  }
-  .filter-controls {
-    width: 100%;
   }
 }
