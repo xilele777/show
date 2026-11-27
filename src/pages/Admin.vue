@@ -26,6 +26,7 @@ import {
 } from '../lib/store'
 import { archiveSchema, emptyRecord, type Archive, type ConcertRecord } from '../lib/schema'
 import { GithubArchive, type GithubConfig } from '../lib/github'
+import { clearR2Secrets } from '../lib/r2'
 import { draftTransaction } from '../lib/drafts'
 import { closeTopLayer, setupDialogLightDismiss } from '../lib/motion'
 import AdminRecordList from '../components/admin/AdminRecordList.vue'
@@ -112,7 +113,8 @@ async function startEdit(record?: ConcertRecord) {
   if (editDirty.value && !(await warn('放弃当前编辑？', '当前编辑尚未保存，继续将丢弃修改。')))
     return
   isNewRecord.value = !record
-  editing.value = record ? JSON.parse(JSON.stringify(record)) : emptyRecord()
+  const defaultCat = archive.value?.settings.categories[0] || '音乐会'
+  editing.value = record ? JSON.parse(JSON.stringify(record)) : emptyRecord(defaultCat)
   clearStatus()
 }
 
@@ -382,6 +384,7 @@ onUnmounted(() => {
   cleanupDraftDismiss?.()
   window.removeEventListener('beforeunload', beforeUnload)
   disconnect()
+  clearR2Secrets()
 })
 </script>
 
@@ -438,6 +441,8 @@ onUnmounted(() => {
           ref="recordFormRef"
           :record="editing"
           :is-new="isNewRecord"
+          :categories="archive!.settings.categories"
+          :archive-tags="[...new Set(archive!.records.flatMap((r) => r.tags))]"
           v-model:busy="busy"
           @save="saveRecord"
           @cancel="closeEdit"
@@ -469,6 +474,7 @@ onUnmounted(() => {
           @connect="connect"
           @disconnect="disconnect"
           @sync-remote="syncRemote"
+          @status="message = $event"
         />
       </div>
     </div>

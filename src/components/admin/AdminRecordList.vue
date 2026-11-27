@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Eye, EyeOff, ImagePlus, Pencil, Plus, Search, Star, Trash2 } from 'lucide-vue-next'
-import type { ConcertRecord } from '../../lib/schema'
+import { formatCredits, type ConcertRecord } from '../../lib/schema'
+import { categoryStyle } from '../../lib/categories'
 import { imageUrl } from '../../lib/store'
 
 const props = defineProps<{
@@ -81,10 +82,18 @@ const filteredRecords = computed(() => {
       <div class="admin-record-info" @click="emit('edit', record)">
         <div class="admin-record-title-row">
           <h3>{{ record.title }}</h3>
+          <span class="cat-badge-inline" :style="categoryStyle(record.type)">{{ record.type }}</span>
+          <span v-if="record.status === 'upcoming'" class="small-badge upcoming-badge">待观看</span>
           <span v-if="record.demo" class="small-badge">示例</span>
           <span v-if="!record.published" class="small-badge">未公开</span>
         </div>
-        <p>{{ record.date }} · {{ record.city }} · {{ record.type }}</p>
+        <p>
+          {{ record.date }} · {{ record.city }}
+          <template v-if="formatCredits(record)"> · {{ formatCredits(record) }}</template>
+          <template v-if="record.seat || record.price">
+            · {{ [record.seat, record.price].filter(Boolean).join(' / ') }}
+          </template>
+        </p>
       </div>
 
       <div class="admin-record-actions">

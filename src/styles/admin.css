@@ -662,6 +662,302 @@
   gap: 10px;
 }
 
+/* ---------- Rich Admin Editors (Chips, Date/Calendar, Program Builder, Category Badges) ---------- */
+.field-head-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cat-badge-inline {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--cat-color, var(--accent));
+  background: var(--cat-soft, var(--accent-soft));
+  flex-shrink: 0;
+}
+
+:root[data-theme='dark'] .cat-badge-inline {
+  color: var(--cat-color-dark, var(--cat-color, var(--accent)));
+}
+
+.upcoming-badge {
+  color: var(--glow);
+  background: var(--glow-soft);
+  border-color: color-mix(in srgb, var(--glow) 34%, transparent);
+  font-weight: 600;
+}
+
+.upcoming-pill-btn.active {
+  background: var(--glow);
+  border-color: var(--glow);
+  color: #141418;
+}
+
+.category-pill-btn {
+  border-color: color-mix(in srgb, var(--cat-color, var(--line-strong)) 35%, transparent);
+}
+
+.category-pill-btn.active {
+  background: var(--cat-color, var(--ink));
+  border-color: var(--cat-color, var(--ink));
+  color: #fff;
+}
+
+.chip-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.editor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line-strong);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.category-chip {
+  background: var(--cat-soft, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--cat-color, var(--line-strong)) 30%, transparent);
+}
+
+.cat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cat-color, var(--accent));
+}
+
+:root[data-theme='dark'] .cat-dot {
+  background: var(--cat-color-dark, var(--cat-color, var(--accent)));
+}
+
+.chip-remove {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.chip-remove:hover {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.chip-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.chip-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-suggest-btn {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px dashed var(--line-strong);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.chip-suggest-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Date Dropdowns + Calendar Popover */
+.date-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-picker-row .select-control {
+  min-width: 96px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.calendar-trigger-btn {
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.calendar-popover {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+  padding: 14px;
+  width: 286px;
+}
+
+.calendar-popover:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@supports (position-area: block-end) {
+  .calendar-popover {
+    inset: auto;
+    margin: 6px 0 0;
+    position-area: block-end span-inline-end;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.cal-nav-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.calendar-selects {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cal-mini-select {
+  height: 30px;
+  min-width: 72px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.calendar-weekdays span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  padding: 2px 0;
+}
+
+.calendar-day {
+  height: 32px;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.calendar-day:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.calendar-day.selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Program Builder */
+.batch-program-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--canvas-elevated);
+  border: 1px solid var(--line);
+}
+
+.program-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.program-row {
+  display: grid;
+  grid-template-columns: 98px minmax(110px, 0.7fr) minmax(0, 1.4fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.program-half-select {
+  min-width: 0;
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.program-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.program-row-actions .icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.add-program-btn {
+  align-self: flex-start;
+}
+
+.external-url-row {
+  margin-top: 12px;
+}
+
+.external-url-row input {
+  background: var(--canvas);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12px;
+  min-height: 36px;
+}
+
 /* ---------- Publish & GitHub Connect ---------- */
 .publish-card {
   padding: 18px 20px;
@@ -772,5 +1068,11 @@
   }
   .upload-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .program-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .program-title-input {
+    grid-column: 1 / -1;
   }
 }
