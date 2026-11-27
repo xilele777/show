@@ -106,7 +106,7 @@ function changeTheme() {
 
 function handleScroll() {
   const y = window.scrollY
-  isScrolled.value = y > 20
+  isScrolled.value = isScrolled.value ? y > 8 : y > 28
   if (!supportsScrollTimeline) {
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight
     scrollProgress.value = maxScroll > 0 ? Math.min(1, y / maxScroll) : 0

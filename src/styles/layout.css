@@ -46,18 +46,13 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: 14px 0 10px;
-  transition: padding 0.3s var(--ease-out-expo);
-}
-
-.site-header.is-scrolled {
-  padding: 8px 0 6px;
+  padding: 12px 0 8px;
 }
 
 .header-capsule {
   width: min(1240px, calc(100% - 48px));
   margin-inline: auto;
-  height: 58px;
+  height: 56px;
   padding: 0 18px;
   border-radius: 999px;
   border: 1px solid var(--line);
@@ -71,13 +66,12 @@
   gap: 16px;
   position: relative;
   transition:
-    height 0.3s var(--ease-out-expo),
-    box-shadow 0.3s var(--ease-out-expo),
-    border-color 0.3s ease;
+    box-shadow 0.28s var(--ease-out-expo),
+    border-color 0.25s ease,
+    background-color 0.25s ease;
 }
 
 .site-header.is-scrolled .header-capsule {
-  height: 52px;
   border-color: var(--line-strong);
   box-shadow: var(--shadow-md);
 }
