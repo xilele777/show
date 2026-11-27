@@ -1016,7 +1016,7 @@
           "role": "领唱"
         }
       ],
-      "orchestra": "",
+      "orchestra": "内蒙古艺术剧院合唱团",
       "conductor": "斯力莫",
       "soloists": [],
       "date": "2026-10-13",
@@ -1401,14 +1401,16 @@
           "performers": []
         }
       ],
-      "images": [],
+      "images": [
+        "uploads/e1b19cd4-c617-4564-a7b8-3e5b26ee6f62.webp"
+      ],
       "featured": false,
       "published": true,
       "demo": false
     },
     {
       "id": "936d0f44-3569-4d2d-85d2-3f0b7c604d62",
-      "title": "原野",
+      "title": "话剧《原野》",
       "subtitle": "",
       "artist": "",
       "cast": [],
@@ -1423,11 +1425,15 @@
       "price": "60元",
       "status": "watched",
       "type": "话剧",
-      "rating": 0,
+      "rating": 5,
       "note": "",
-      "tags": [],
+      "tags": [
+        "曹禺"
+      ],
       "program": [],
-      "images": [],
+      "images": [
+        "uploads/b2023364-b4cf-4c24-afe2-993658d73a4e.webp"
+      ],
       "featured": false,
       "published": true,
       "demo": false
