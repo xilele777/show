@@ -35,7 +35,7 @@
       "venue": "长沙音乐厅",
       "seat": "2楼7排12座",
       "price": "80",
-      "status": "watched",
+      "status": "upcoming",
       "type": "歌剧",
       "rating": 5,
       "note": "",
@@ -55,6 +55,62 @@
         "https://concshow-images.2519175810.workers.dev/uploads/03c0d2ad-9985-4f9b-8236-6d41f4153bb9.webp"
       ],
       "featured": true,
+      "published": true,
+      "demo": false
+    },
+    {
+      "id": "17bbacba-03fa-4855-ad4a-a97a1d37bbb4",
+      "title": "大型原创民族音乐会《水云赋》",
+      "artist": "",
+      "orchestra": "湖南民族乐团",
+      "conductor": "张列",
+      "soloists": [
+        "陈雷激"
+      ],
+      "date": "2026-11-19",
+      "city": "长沙",
+      "venue": "长沙音乐厅湘江大厅",
+      "seat": "1 楼 1 排 21 座",
+      "price": "赠票",
+      "status": "watched",
+      "type": "民族音乐会",
+      "rating": 4,
+      "note": "",
+      "tags": [
+        "王云飞",
+        "HNCO"
+      ],
+      "program": [
+        {
+          "title": "民族管弦乐《湘江北去》",
+          "composer": "李尚谦",
+          "half": "上半场"
+        },
+        {
+          "title": "吟唱、笙竽与乐队《千古沉吟》",
+          "composer": "王甫建",
+          "half": "上半场"
+        },
+        {
+          "title": "箫歌与傩舞《梅山手诀》",
+          "composer": "王甫建",
+          "half": "上半场"
+        },
+        {
+          "title": "二胡协奏曲《芙蓉花韵》",
+          "composer": "黄文",
+          "half": "上半场"
+        },
+        {
+          "title": "原创古琴协奏曲《云水赋》",
+          "composer": "王云飞",
+          "half": "下半场"
+        }
+      ],
+      "images": [
+        "https://concshow-images.2519175810.workers.dev/uploads/f38a0141-c7c5-408c-9be2-743467ed89a5.webp"
+      ],
+      "featured": false,
       "published": true,
       "demo": false
     }
