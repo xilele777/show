@@ -5,9 +5,8 @@
 
 .archive-stage--deck {
   min-height: 100svh;
-  padding: 44px 0 18px;
-  display: grid;
-  align-content: center;
+  padding: 0;
+  display: block;
 }
 
 .hud-home-controls {
@@ -74,7 +73,6 @@
   color: var(--ink);
   padding: 16px;
   width: min(360px, calc(100vw - 28px));
-  display: flex;
   flex-direction: column;
   gap: 12px;
   opacity: 0;
@@ -84,10 +82,6 @@
     transform 0.28s var(--ease-out-expo),
     display 0.22s allow-discrete,
     overlay 0.22s allow-discrete;
-}
-
-.filter-popover:not(:popover-open) {
-  display: none;
 }
 
 .filter-popover:popover-open {

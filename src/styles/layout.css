@@ -54,7 +54,13 @@
   gap: 12px;
   padding: 18px 24px;
   pointer-events: none;
-  transition: transform 0.34s var(--ease-out-expo), opacity 0.26s ease;
+  opacity: 0.56;
+  transition: transform 0.34s var(--ease-out-expo), opacity 0.3s ease;
+}
+
+.floating-hud:hover,
+.floating-hud:focus-within {
+  opacity: 1;
 }
 
 .floating-hud.is-hidden:not(:focus-within) {

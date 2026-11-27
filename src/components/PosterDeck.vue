@@ -32,7 +32,6 @@ const glowIndex = ref(0)
 const statusText = ref('')
 const isDragging = ref(false)
 const autoGlide = ref(true)
-const indicator = ref({ x: 0, ready: false })
 
 const total = computed(() => props.records.length)
 const slots = computed(() => buildDeckSlots(props.records, 11))
@@ -223,7 +222,7 @@ function startIntro(from: number) {
 
 function measure() {
   const card = cardEls.find(Boolean)
-  if (card?.offsetWidth) unit = clamp(card.offsetWidth * 0.78, 140, 238)
+  if (card?.offsetWidth) unit = clamp(card.offsetWidth * 0.8, 150, 275)
 }
 
 function render() {
@@ -568,9 +567,8 @@ function syncRail() {
   const rail = railEl.value
   const thumb = thumbEls[activeIndex.value]
   if (!rail || !thumb) return
-  const center = thumb.offsetLeft + thumb.offsetWidth / 2
-  indicator.value = { x: center, ready: true }
   if (rail.scrollWidth > rail.clientWidth + 1) {
+    const center = thumb.offsetLeft + thumb.offsetWidth / 2
     rail.scrollTo({
       left: center - rail.clientWidth / 2,
       behavior: reduceMotion ? 'auto' : 'smooth'
@@ -841,18 +839,12 @@ onUnmounted(() => {
     </div>
 
     <nav v-if="records.length > 1" ref="railEl" class="poster-rail" aria-label="选择海报">
-      <span
-        class="rail-indicator"
-        :class="{ ready: indicator.ready }"
-        :style="{ transform: `translateX(${indicator.x}px)` }"
-        aria-hidden="true"
-      />
       <button
         v-for="(record, index) in records"
         :key="record.id"
         :ref="(el) => setThumbEl(el, index)"
         type="button"
-        class="rail-thumb"
+        class="rail-dot"
         :class="{ active: index === activeIndex }"
         :aria-current="index === activeIndex ? 'true' : undefined"
         :aria-label="record.title"
@@ -860,16 +852,7 @@ onUnmounted(() => {
         @click="goToRecord(index)"
         @pointerenter="onThumbEnter($event, index)"
         @pointerleave="onThumbLeave"
-      >
-        <img
-          v-if="record.images[0]"
-          :src="imageUrl(record.images[0])"
-          alt=""
-          loading="lazy"
-          decoding="async"
-        />
-        <span v-else class="rail-thumb-fallback" />
-      </button>
+      />
     </nav>
 
     <p class="visually-hidden" role="status" aria-live="polite">{{ statusText }}</p>
