@@ -1,0 +1,441 @@
+<script setup lang="ts">
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  CalendarDays,
+  Star,
+  Copy,
+  Check,
+  Music2,
+  ArrowLeft,
+  ArrowRight
+} from 'lucide-vue-next'
+import { archive, visibleRecords, imageUrl } from '../lib/store'
+import { dateLabel } from '../lib/schema'
+import { filterRecords, readFilters } from '../lib/filters'
+import { closeTopLayer, setupDialogLightDismiss } from '../lib/motion'
+
+const route = useRoute()
+const router = useRouter()
+const dialog = ref<HTMLDialogElement>()
+const contentEl = ref<HTMLElement>()
+const stageEl = ref<HTMLElement>()
+const photo = ref(0)
+const photoDir = ref<1 | -1>(1)
+const recordDir = ref<1 | -1>(1)
+const copied = ref(false)
+const copyError = ref('')
+const swipeX = ref(0)
+const swiping = ref(false)
+
+const record = computed(() => visibleRecords.value.find((item) => item.id === route.query.record))
+const navList = computed(() => {
+  const filtered = filterRecords(visibleRecords.value, readFilters(route.query))
+  return filtered.some((item) => item.id === route.query.record) ? filtered : visibleRecords.value
+})
+const navIndex = computed(() => navList.value.findIndex((item) => item.id === route.query.record))
+const prevRecord = computed(() =>
+  navIndex.value > 0 ? navList.value[navIndex.value - 1] : undefined
+)
+const nextRecord = computed(() =>
+  navIndex.value >= 0 && navIndex.value < navList.value.length - 1
+    ? navList.value[navIndex.value + 1]
+    : undefined
+)
+const missing = computed(() => Boolean(route.query.record && !record.value && archive.value))
+const photoTransition = computed(() => (photoDir.value > 0 ? 'photo-next' : 'photo-prev'))
+const recordTransition = computed(() => (recordDir.value > 0 ? 'detail-next' : 'detail-prev'))
+
+let copyTimer: ReturnType<typeof setTimeout> | undefined
+let cleanupDismiss: (() => void) | undefined
+let pendingPhoto: 'first' | 'last' = 'first'
+let wheelAccum = 0
+let wheelLock = 0
+let wheelReset: ReturnType<typeof setTimeout> | undefined
+const swipe = { id: -1, x: 0, y: 0, t: 0, active: false, captured: false }
+
+function clearRecordQuery() {
+  if (route.query.record) {
+    const query = { ...route.query }
+    delete query.record
+    router.replace({ query })
+  }
+}
+
+async function requestClose() {
+  await closeTopLayer(dialog.value)
+  clearRecordQuery()
+}
+
+function handleNativeClose() {
+  clearRecordQuery()
+}
+
+watch(
+  dialog,
+  (el) => {
+    cleanupDismiss?.()
+    cleanupDismiss = el ? setupDialogLightDismiss(el, clearRecordQuery) : undefined
+  },
+  { immediate: true }
+)
+
+watch(
+  record,
+  async (value, oldValue) => {
+    const count = value?.images.length ?? 0
+    photo.value = pendingPhoto === 'last' && count > 0 ? count - 1 : 0
+    pendingPhoto = 'first'
+    swipeX.value = 0
+    copied.value = false
+    copyError.value = ''
+    await nextTick()
+    if (value && oldValue && value.id !== oldValue.id) {
+      contentEl.value?.scrollTo({ top: 0 })
+      dialog.value?.scrollTo({ top: 0 })
+    }
+    if (value && dialog.value && !dialog.value.open) {
+      dialog.value.removeAttribute('data-closing')
+      dialog.value.showModal()
+    }
+    if (!value && dialog.value?.open) {
+      await closeTopLayer(dialog.value)
+    }
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  cleanupDismiss?.()
+  clearTimeout(copyTimer)
+  clearTimeout(wheelReset)
+})
+
+function changePhoto(amount: 1 | -1) {
+  if (record.value && record.value.images.length > 0) {
+    photoDir.value = amount
+    photo.value = (photo.value + amount + record.value.images.length) % record.value.images.length
+  }
+}
+
+function selectPhoto(index: number) {
+  if (index === photo.value) return
+  photoDir.value = index > photo.value ? 1 : -1
+  photo.value = index
+}
+
+function switchRecord(id: string, dir: 1 | -1) {
+  recordDir.value = dir
+  router.replace({ query: { ...route.query, record: id } })
+}
+
+function canBrowse(delta: 1 | -1): boolean {
+  const count = record.value?.images.length ?? 0
+  const next = photo.value + delta
+  if (count > 1 && next >= 0 && next < count) return true
+  return Boolean(delta > 0 ? nextRecord.value : prevRecord.value)
+}
+
+function browse(delta: 1 | -1) {
+  const count = record.value?.images.length ?? 0
+  const next = photo.value + delta
+  if (count > 1 && next >= 0 && next < count) {
+    photoDir.value = delta
+    photo.value = next
+    return
+  }
+  const adjacent = delta > 0 ? nextRecord.value : prevRecord.value
+  if (!adjacent) return
+  photoDir.value = delta
+  pendingPhoto = delta < 0 ? 'last' : 'first'
+  switchRecord(adjacent.id, delta)
+}
+
+function onDialogKeydown(event: KeyboardEvent) {
+  if (event.altKey || event.ctrlKey || event.metaKey) return
+  const node = event.target as HTMLElement | null
+  if (node && (node.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(node.tagName))) return
+  if (event.key === 'ArrowRight') browse(1)
+  else if (event.key === 'ArrowLeft') browse(-1)
+  else return
+  event.preventDefault()
+}
+
+function onStageDown(event: PointerEvent) {
+  if (event.button !== 0 || (event.target as Element | null)?.closest('button')) return
+  Object.assign(swipe, {
+    id: event.pointerId,
+    x: event.clientX,
+    y: event.clientY,
+    t: event.timeStamp,
+    active: true,
+    captured: false
+  })
+}
+
+function onStageMove(event: PointerEvent) {
+  if (!swipe.active || event.pointerId !== swipe.id) return
+  const dx = event.clientX - swipe.x
+  const dy = event.clientY - swipe.y
+  if (!swipe.captured) {
+    if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+      swipe.captured = true
+      swiping.value = true
+      stageEl.value?.setPointerCapture?.(event.pointerId)
+    } else {
+      if (Math.abs(dy) > 10) swipe.active = false
+      return
+    }
+  }
+  swipeX.value = canBrowse(dx < 0 ? 1 : -1) ? dx : dx * 0.22
+}
+
+function onStageUp(event: PointerEvent) {
+  if (!swipe.active || event.pointerId !== swipe.id) return
+  swipe.active = false
+  if (!swipe.captured) return
+  swipe.captured = false
+  swiping.value = false
+  try {
+    stageEl.value?.releasePointerCapture?.(event.pointerId)
+  } catch {}
+  const dx = event.clientX - swipe.x
+  const elapsed = Math.max(1, event.timeStamp - swipe.t)
+  const speed = (dx / elapsed) * 1000
+  swipeX.value = 0
+  if (event.type === 'pointercancel') return
+  if (Math.abs(dx) > 64 || (Math.abs(dx) > 18 && Math.abs(speed) > 480)) browse(dx < 0 ? 1 : -1)
+}
+
+function onStageWheel(event: WheelEvent) {
+  if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
+  event.preventDefault()
+  const now = performance.now()
+  clearTimeout(wheelReset)
+  wheelReset = setTimeout(() => {
+    wheelAccum = 0
+  }, 180)
+  if (now < wheelLock) {
+    wheelLock = now + 220
+    return
+  }
+  wheelAccum += event.deltaX
+  if (Math.abs(wheelAccum) > 60) {
+    browse(wheelAccum > 0 ? 1 : -1)
+    wheelAccum = 0
+    wheelLock = now + 420
+  }
+}
+
+async function filterByTag(tag: string) {
+  await closeTopLayer(dialog.value)
+  router.replace({ query: { q: tag } })
+}
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(location.href)
+    copied.value = true
+    clearTimeout(copyTimer)
+    copyTimer = setTimeout(() => {
+      copied.value = false
+    }, 2400)
+  } catch {
+    copyError.value = '无法复制，请从地址栏复制链接。'
+  }
+}
+</script>
+
+<template>
+  <p v-if="missing" class="status-banner" role="status">
+    这条记录不存在或尚未公开。<button @click="clearRecordQuery">返回</button>
+  </p>
+
+  <dialog
+    ref="dialog"
+    closedby="any"
+    class="record-dialog"
+    aria-labelledby="record-title"
+    @close="handleNativeClose"
+    @keydown="onDialogKeydown"
+  >
+    <div v-if="record" class="detail-shell" :class="{ 'detail-shell--single': !record.images.length }">
+      <div
+        v-if="record.images.length"
+        ref="stageEl"
+        class="detail-stage"
+        :class="{ 'is-swiping': swiping }"
+        :style="{ '--swipe-x': `${swipeX}px` }"
+        tabindex="0"
+        aria-label="现场海报与照片浏览"
+        @pointerdown="onStageDown"
+        @pointermove="onStageMove"
+        @pointerup="onStageUp"
+        @pointercancel="onStageUp"
+        @wheel="onStageWheel"
+      >
+        <Transition name="photo-bg">
+          <img
+            :key="record.images[photo]"
+            class="detail-stage-bg"
+            :src="imageUrl(record.images[photo]!)"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+          />
+        </Transition>
+
+        <Transition :name="photoTransition">
+          <img
+            :key="`${record.id}-${record.images[photo]}`"
+            class="detail-stage-img"
+            :src="imageUrl(record.images[photo]!)"
+            :alt="`${record.title} · ${photo + 1}`"
+            decoding="async"
+            draggable="false"
+          />
+        </Transition>
+
+        <template v-if="record.images.length > 1">
+          <button
+            type="button"
+            class="photo-prev icon-button"
+            aria-label="上一张"
+            @click="changePhoto(-1)"
+          >
+            <ChevronLeft :size="18" />
+          </button>
+          <button
+            type="button"
+            class="photo-next icon-button"
+            aria-label="下一张"
+            @click="changePhoto(1)"
+          >
+            <ChevronRight :size="18" />
+          </button>
+          <div class="photo-dots" role="group" aria-label="切换图片">
+            <button
+              v-for="(img, idx) in record.images"
+              :key="img"
+              type="button"
+              class="photo-dot"
+              :class="{ active: idx === photo }"
+              :aria-label="`第 ${idx + 1} 张`"
+              @click="selectPhoto(idx)"
+            />
+          </div>
+        </template>
+      </div>
+
+      <div ref="contentEl" class="detail-content">
+        <div class="dialog-topbar">
+          <div class="dialog-topbar-meta">
+            <span class="detail-type-pill">{{ record.type }}</span>
+            <span v-if="navList.length > 1" class="detail-counter">
+              {{ String(navIndex + 1).padStart(2, '0') }} / {{ String(navList.length).padStart(2, '0') }}
+            </span>
+          </div>
+
+          <div class="dialog-topbar-actions">
+            <button
+              type="button"
+              class="icon-button dialog-share-btn"
+              :class="{ copied }"
+              :aria-label="copied ? '已复制分享链接' : '复制分享链接'"
+              :title="copied ? '已复制链接' : '复制链接'"
+              @click="copyLink"
+            >
+              <Check v-if="copied" :size="15" />
+              <Copy v-else :size="15" />
+            </button>
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="关闭"
+              autofocus
+              @click="requestClose"
+            >
+              <X :size="18" />
+            </button>
+          </div>
+        </div>
+
+        <Transition :name="recordTransition" mode="out-in">
+          <div :key="record.id" class="detail-body">
+            <div class="detail-header">
+              <h1 id="record-title">{{ record.title }}</h1>
+              <p v-if="record.artist" class="detail-artist">{{ record.artist }}</p>
+            </div>
+
+            <div class="detail-meta">
+              <span><CalendarDays :size="14" />{{ dateLabel(record.date) }}</span>
+              <span>
+                <MapPin :size="14" />{{ record.city }}
+                <template v-if="record.venue"> · {{ record.venue }}</template>
+              </span>
+              <span
+                v-if="record.rating > 0"
+                class="rating"
+                :aria-label="`评分 ${record.rating} / 5`"
+              >
+                <Star v-for="star in 5" :key="star" :size="13" :class="{ filled: star <= record.rating }" />
+              </span>
+            </div>
+
+            <p v-if="record.note" class="detail-note">{{ record.note }}</p>
+
+            <div v-if="record.tags.length" class="tags">
+              <button
+                v-for="tag in record.tags"
+                :key="tag"
+                type="button"
+                class="tag-chip"
+                @click="filterByTag(tag)"
+              >
+                # {{ tag }}
+              </button>
+            </div>
+
+            <section v-if="record.program.length" class="setlist-card">
+              <h2><Music2 :size="14" />曲目单</h2>
+              <ol class="program">
+                <li v-for="(song, index) in record.program" :key="index">
+                  <span>{{ String(index + 1).padStart(2, '0') }}</span>
+                  {{ song }}
+                </li>
+              </ol>
+            </section>
+
+            <p v-if="copyError" class="demo-note" role="status">{{ copyError }}</p>
+          </div>
+        </Transition>
+
+        <div v-if="prevRecord || nextRecord" class="detail-footer">
+          <button
+            v-if="prevRecord"
+            type="button"
+            class="detail-footer-nav"
+            @click="switchRecord(prevRecord.id, -1)"
+          >
+            <ArrowLeft :size="14" />
+            <span>{{ prevRecord.title }}</span>
+          </button>
+          <span v-else />
+          <button
+            v-if="nextRecord"
+            type="button"
+            class="detail-footer-nav detail-footer-nav--next"
+            @click="switchRecord(nextRecord.id, 1)"
+          >
+            <span>{{ nextRecord.title }}</span>
+            <ArrowRight :size="14" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</template>
