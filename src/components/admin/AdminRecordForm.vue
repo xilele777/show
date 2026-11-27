@@ -2,16 +2,20 @@
 import { computed, ref, watch } from 'vue'
 import {
   ArrowDown,
+  ArrowLeft,
   ArrowUp,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
   ImagePlus,
   Link2,
   Plus,
   Save,
   Star,
+  Trash2,
   X
 } from 'lucide-vue-next'
 import {
@@ -37,6 +41,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [record: ConcertRecord]
   cancel: []
+  delete: []
+  toggleField: [field: 'published' | 'featured']
   error: [message: string]
   status: [message: string]
   'update:busy': [value: boolean]
@@ -165,7 +171,20 @@ watch(
 
 const isDirty = computed(() => snapshot() !== initialSnapshot.value)
 
-defineExpose({ isDirty })
+function markClean() {
+  initialSnapshot.value = snapshot()
+}
+
+function syncField(field: 'published' | 'featured', value: boolean) {
+  draft.value[field] = value
+  try {
+    const snap = JSON.parse(initialSnapshot.value)
+    snap[field] = value
+    initialSnapshot.value = JSON.stringify(snap)
+  } catch {}
+}
+
+defineExpose({ isDirty, markClean, syncField })
 
 function addSoloist() {
   const parts = soloistInput.value
@@ -332,13 +351,60 @@ function submit() {
 
 <template>
   <form class="record-form" @submit.prevent="submit">
-    <div class="panel-heading">
-      <div>
-        <h2>{{ isNew ? '新增记录' : '编辑记录' }}</h2>
+    <div class="panel-heading record-form-heading">
+      <div class="record-form-title-wrap">
+        <button
+          type="button"
+          class="icon-button mobile-back-btn"
+          aria-label="返回列表"
+          title="返回列表"
+          @click="emit('cancel')"
+        >
+          <ArrowLeft :size="16" />
+        </button>
+        <div>
+          <h2>{{ isNew ? '新增记录' : draft.title || '编辑记录' }}</h2>
+          <p v-if="isDirty" class="unsaved-hint">有未保存的表单修改</p>
+        </div>
       </div>
-      <button type="button" class="icon-button" aria-label="关闭编辑" @click="emit('cancel')">
-        <X :size="20" />
-      </button>
+
+      <div class="record-form-head-actions">
+        <template v-if="!isNew">
+          <button
+            type="button"
+            class="icon-button"
+            :class="{ 'is-active': draft.featured }"
+            :aria-label="draft.featured ? '取消精选' : '设为精选'"
+            :title="draft.featured ? '取消精选' : '设为精选'"
+            @click="emit('toggleField', 'featured')"
+          >
+            <Star :size="15" />
+          </button>
+          <button
+            type="button"
+            class="icon-button"
+            :class="{ 'is-muted': !draft.published }"
+            :aria-label="draft.published ? '公开中（点击隐藏）' : '已隐藏（点击公开）'"
+            :title="draft.published ? '公开中（点击隐藏）' : '已隐藏（点击公开）'"
+            @click="emit('toggleField', 'published')"
+          >
+            <Eye v-if="draft.published" :size="15" />
+            <EyeOff v-else :size="15" />
+          </button>
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="移除这条记录"
+            title="移除"
+            @click="emit('delete')"
+          >
+            <Trash2 :size="15" />
+          </button>
+        </template>
+        <button class="button small" type="submit" :disabled="busy || (!isNew && !isDirty)">
+          <Save :size="14" />保存草稿
+        </button>
+      </div>
     </div>
 
     <div class="form-grid">

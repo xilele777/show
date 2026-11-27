@@ -83,10 +83,6 @@ function submit() {
         一句话简介 *
         <input v-model="draft.tagline" required maxlength="120" />
       </label>
-      <label class="full">
-        关于介绍
-        <textarea v-model="draft.bio" rows="6" maxlength="5000" />
-      </label>
 
       <div class="field-label full">
         <div class="field-head-inline">

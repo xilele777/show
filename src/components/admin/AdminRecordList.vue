@@ -1,156 +1,174 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Eye, EyeOff, ImagePlus, Pencil, Plus, Search, Star, Trash2 } from 'lucide-vue-next'
-import { formatCredits, type ConcertRecord } from '../../lib/schema'
+import { EyeOff, ImagePlus, Plus, Search, Star, Trash2 } from 'lucide-vue-next'
+import type { ConcertRecord } from '../../lib/schema'
 import { categoryStyle } from '../../lib/categories'
 import { imageUrl } from '../../lib/store'
 
 const props = defineProps<{
   records: ConcertRecord[]
+  selectedId?: string
+  isNew?: boolean
   publishedCount: number
   demoCount: number
 }>()
 
 const emit = defineEmits<{
   create: []
-  edit: [record: ConcertRecord]
-  delete: [record: ConcertRecord]
-  toggleField: [record: ConcertRecord, field: 'published' | 'featured']
+  select: [record: ConcertRecord]
   clearDemo: []
 }>()
 
 const filterQuery = ref('')
+const statusFilter = ref<'all' | 'published' | 'hidden' | 'upcoming'>('all')
 
 const filteredRecords = computed(() => {
   const q = filterQuery.value.trim().toLocaleLowerCase()
-  if (!q) return props.records
-  return props.records.filter((r) =>
-    [r.title, r.artist, r.city, r.venue, r.type, ...r.tags]
+  return props.records.filter((r) => {
+    if (statusFilter.value === 'published' && !r.published) return false
+    if (statusFilter.value === 'hidden' && r.published) return false
+    if (statusFilter.value === 'upcoming' && r.status !== 'upcoming') return false
+    if (!q) return true
+    return [r.title, r.artist, r.orchestra, r.conductor, ...r.soloists, r.city, r.venue, r.type, ...r.tags]
       .join(' ')
       .toLocaleLowerCase()
       .includes(q)
-  )
+  })
 })
 </script>
 
 <template>
-  <div class="panel-heading">
-    <div>
-      <h2>观演记录</h2>
-      <p>共 {{ records.length }} 条 · {{ publishedCount }} 条公开</p>
+  <div class="master-head">
+    <div class="master-head-top">
+      <div>
+        <h2>观演记录</h2>
+        <p>{{ records.length }} 条 · {{ publishedCount }} 条公开</p>
+      </div>
+      <div class="master-head-actions">
+        <button
+          v-if="demoCount"
+          type="button"
+          class="button secondary small"
+          title="清空示例记录"
+          @click="emit('clearDemo')"
+        >
+          <Trash2 :size="13" />清空示例
+        </button>
+        <button type="button" class="button small" @click="emit('create')">
+          <Plus :size="15" />新增
+        </button>
+      </div>
     </div>
-    <div class="panel-heading-actions">
-      <button
-        v-if="demoCount"
-        type="button"
-        class="button secondary small"
-        @click="emit('clearDemo')"
-      >
-        <Trash2 :size="14" />清空示例 ({{ demoCount }})
-      </button>
-      <button type="button" class="button small" @click="emit('create')">
-        <Plus :size="16" />新增记录
-      </button>
-    </div>
-  </div>
 
-  <div v-if="records.length > 3" class="admin-list-toolbar">
-    <label class="admin-search">
+    <label v-if="records.length > 0" class="admin-search">
       <Search :size="14" />
       <input
         v-model="filterQuery"
         type="search"
-        placeholder="筛选标题、音乐人、城市…"
+        placeholder="搜索标题、乐团、城市…"
         aria-label="筛选观演记录"
       />
     </label>
+
+    <div v-if="records.length > 2" class="master-filter-pills" role="group" aria-label="快速筛选">
+      <button
+        type="button"
+        :class="{ active: statusFilter === 'all' }"
+        @click="statusFilter = 'all'"
+      >
+        全部
+      </button>
+      <button
+        type="button"
+        :class="{ active: statusFilter === 'published' }"
+        @click="statusFilter = 'published'"
+      >
+        公开
+      </button>
+      <button
+        type="button"
+        :class="{ active: statusFilter === 'hidden' }"
+        @click="statusFilter = 'hidden'"
+      >
+        未公开
+      </button>
+      <button
+        type="button"
+        :class="{ active: statusFilter === 'upcoming' }"
+        @click="statusFilter = 'upcoming'"
+      >
+        待观看
+      </button>
+    </div>
   </div>
 
-  <div class="admin-records">
-    <article v-for="record in filteredRecords" :key="record.id">
+  <div class="master-list">
+    <div v-if="isNew" class="master-item is-new active">
+      <div class="master-thumb master-thumb--empty">
+        <Plus :size="16" />
+      </div>
+      <div class="master-item-body">
+        <div class="master-item-top">
+          <strong>正在新增记录…</strong>
+        </div>
+        <p class="master-new-hint">填写右侧信息后保存草稿</p>
+      </div>
+    </div>
+
+    <button
+      v-for="record in filteredRecords"
+      :key="record.id"
+      type="button"
+      class="master-item"
+      :class="{ active: !isNew && selectedId === record.id }"
+      :style="categoryStyle(record.type)"
+      @click="emit('select', record)"
+    >
       <img
         v-if="record.images[0]"
+        class="master-thumb"
         :src="imageUrl(record.images[0])"
         alt=""
         loading="lazy"
-        @click="emit('edit', record)"
       />
-      <div v-else class="admin-no-image" @click="emit('edit', record)">
-        <ImagePlus :size="20" />
+      <div v-else class="master-thumb master-thumb--empty">
+        <ImagePlus :size="15" />
       </div>
 
-      <div class="admin-record-info" @click="emit('edit', record)">
-        <div class="admin-record-title-row">
-          <h3>{{ record.title }}</h3>
-          <span class="cat-badge-inline" :style="categoryStyle(record.type)">{{ record.type }}</span>
-          <span v-if="record.status === 'upcoming'" class="small-badge upcoming-badge">待观看</span>
-          <span v-if="record.demo" class="small-badge">示例</span>
-          <span v-if="!record.published" class="small-badge">未公开</span>
+      <div class="master-item-body">
+        <div class="master-item-top">
+          <strong>{{ record.title }}</strong>
+          <Star v-if="record.featured" :size="12" class="master-star-icon" aria-label="精选" />
+          <EyeOff v-if="!record.published" :size="12" class="master-hidden-icon" aria-label="未公开" />
         </div>
-        <p>
-          {{ record.date }} · {{ record.city }}
-          <template v-if="formatCredits(record)"> · {{ formatCredits(record) }}</template>
-          <template v-if="record.seat || record.price">
-            · {{ [record.seat, record.price].filter(Boolean).join(' / ') }}
-          </template>
-        </p>
+        <div class="master-item-meta">
+          <span class="master-cat-dot" aria-hidden="true" />
+          <span>{{ record.type }}</span>
+          <span class="meta-dot">·</span>
+          <time>{{ record.date }}</time>
+          <span class="meta-dot">·</span>
+          <span>{{ record.city }}</span>
+          <span v-if="record.status === 'upcoming'" class="master-upcoming-flag">待观看</span>
+        </div>
       </div>
+    </button>
 
-      <div class="admin-record-actions">
-        <button
-          type="button"
-          class="icon-button"
-          :class="{ 'is-active': record.featured }"
-          :aria-label="record.featured ? `取消精选：${record.title}` : `设为精选：${record.title}`"
-          :title="record.featured ? '取消精选' : '设为精选'"
-          @click="emit('toggleField', record, 'featured')"
-        >
-          <Star :size="15" />
-        </button>
-        <button
-          type="button"
-          class="icon-button"
-          :class="{ 'is-muted': !record.published }"
-          :aria-label="record.published ? `设为私密：${record.title}` : `公开展示：${record.title}`"
-          :title="record.published ? '公开中（点击隐藏）' : '已隐藏（点击公开）'"
-          @click="emit('toggleField', record, 'published')"
-        >
-          <Eye v-if="record.published" :size="15" />
-          <EyeOff v-else :size="15" />
-        </button>
-        <button
-          type="button"
-          class="icon-button"
-          :aria-label="`编辑${record.title}`"
-          title="编辑"
-          @click="emit('edit', record)"
-        >
-          <Pencil :size="15" />
-        </button>
-        <button
-          type="button"
-          class="icon-button"
-          :aria-label="`移除${record.title}`"
-          title="移除"
-          @click="emit('delete', record)"
-        >
-          <Trash2 :size="15" />
-        </button>
-      </div>
-    </article>
-
-    <div v-if="!records.length" class="empty-state">
+    <div v-if="!records.length && !isNew" class="empty-state master-empty">
       <h3>还没有观演记录</h3>
       <p>添加第一场演出的照片与记忆。</p>
       <button type="button" class="button small" @click="emit('create')">
-        <Plus :size="16" />新增记录
+        <Plus :size="15" />新增记录
       </button>
     </div>
 
-    <div v-else-if="!filteredRecords.length" class="empty-state">
+    <div v-else-if="!filteredRecords.length && !isNew" class="empty-state master-empty">
       <h3>没有匹配的记录</h3>
-      <button type="button" class="button secondary small" @click="filterQuery = ''">
-        清除搜索
+      <button
+        type="button"
+        class="button secondary small"
+        @click="filterQuery = ''; statusFilter = 'all'"
+      >
+        清除筛选
       </button>
     </div>
   </div>

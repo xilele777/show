@@ -8,6 +8,7 @@ import {
   Check,
   CloudUpload,
   Download,
+  Plus,
   RotateCcw,
   Settings2,
   Upload,
@@ -25,8 +26,15 @@ import {
   stage
 } from '../lib/store'
 import { archiveSchema, emptyRecord, type Archive, type ConcertRecord } from '../lib/schema'
-import { GithubArchive, type GithubConfig } from '../lib/github'
-import { clearR2Secrets } from '../lib/r2'
+import {
+  autoConnectGithub,
+  connectGithubRepo,
+  disconnectGithubRepo,
+  getGithubClient,
+  githubConfig,
+  githubConnected,
+  githubConnecting
+} from '../lib/session'
 import { draftTransaction } from '../lib/drafts'
 import { closeTopLayer, setupDialogLightDismiss } from '../lib/motion'
 import AdminRecordList from '../components/admin/AdminRecordList.vue'
@@ -43,16 +51,9 @@ const settingsFormRef = ref<InstanceType<typeof AdminSettingsForm>>()
 const busy = ref(false)
 const message = ref('')
 const error = ref('')
-const connected = ref(false)
 const token = ref('')
-const config = ref<GithubConfig>({
-  owner: import.meta.env.VITE_GITHUB_OWNER || 'xilele777',
-  repo: import.meta.env.VITE_GITHUB_REPO || 'concshow',
-  branch: import.meta.env.VITE_GITHUB_BRANCH || 'main'
-})
 const commitUrl = ref('')
 const local = import.meta.env.DEV
-let client: GithubArchive | null = null
 let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 const confirmDialog = ref<HTMLDialogElement>()
@@ -67,6 +68,17 @@ const settingsDirty = computed(() => Boolean(tab.value === 'settings' && setting
 const sorted = computed(() => [...archive.value!.records].sort((a, b) => b.date.localeCompare(a.date)))
 const demoCount = computed(() => archive.value!.records.filter((record) => record.demo).length)
 const publishedCount = computed(() => archive.value!.records.filter((record) => record.published).length)
+
+function isDesktopSplit(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth > 760
+}
+
+function selectInitialRecord() {
+  if (!editing.value && isDesktopSplit() && sorted.value.length > 0) {
+    isNewRecord.value = false
+    editing.value = JSON.parse(JSON.stringify(sorted.value[0]))
+  }
+}
 
 function warn(title: string, text: string): Promise<boolean> {
   confirmTitle.value = title
@@ -99,17 +111,23 @@ watch(message, (val) => {
 })
 
 async function changeTab(next: typeof tab.value) {
-  if (busy.value) return
+  if (busy.value || tab.value === next) return
   if (editDirty.value && !(await warn('放弃未保存的记录？', '当前表单改动尚未保存，继续将丢弃本次编辑。')))
     return
   if (settingsDirty.value && !(await warn('放弃未保存的设置？', '站点设置尚未保存，继续将丢弃本次修改。')))
     return
-  editing.value = null
+  if (next !== 'records') {
+    editing.value = null
+    isNewRecord.value = false
+  }
   tab.value = next
+  if (next === 'records') selectInitialRecord()
   clearStatus()
 }
 
 async function startEdit(record?: ConcertRecord) {
+  if (!record && isNewRecord.value && editing.value) return
+  if (record && !isNewRecord.value && editing.value?.id === record.id) return
   if (editDirty.value && !(await warn('放弃当前编辑？', '当前编辑尚未保存，继续将丢弃修改。')))
     return
   isNewRecord.value = !record
@@ -120,7 +138,13 @@ async function startEdit(record?: ConcertRecord) {
 
 async function closeEdit() {
   if (editDirty.value && !(await warn('放弃未保存的编辑？', '当前改动尚未保存，确定离开吗？'))) return
-  editing.value = null
+  if (isDesktopSplit() && isNewRecord.value && sorted.value.length > 0) {
+    isNewRecord.value = false
+    editing.value = JSON.parse(JSON.stringify(sorted.value[0]))
+  } else {
+    isNewRecord.value = false
+    editing.value = null
+  }
 }
 
 async function saveRecord(record: ConcertRecord) {
@@ -130,17 +154,21 @@ async function saveRecord(record: ConcertRecord) {
   if (index === -1) next.records.push(record)
   else next.records[index] = record
   await stage(next)
-  editing.value = null
+  isNewRecord.value = false
+  editing.value = JSON.parse(JSON.stringify(record))
+  recordFormRef.value?.markClean()
   message.value = '记录已暂存到草稿。'
 }
 
-async function toggleRecordField(record: ConcertRecord, field: 'published' | 'featured') {
+async function toggleRecordField(field: 'published' | 'featured') {
+  if (!editing.value || isNewRecord.value) return
   clearStatus()
   const next: Archive = JSON.parse(JSON.stringify(archive.value))
-  const target = next.records.find((item) => item.id === record.id)
+  const target = next.records.find((item) => item.id === editing.value!.id)
   if (!target) return
   target[field] = !target[field]
   await stage(next)
+  recordFormRef.value?.syncField(field, target[field])
   message.value =
     field === 'published'
       ? target.published
@@ -151,11 +179,15 @@ async function toggleRecordField(record: ConcertRecord, field: 'published' | 'fe
         : `已取消「${target.title}」精选`
 }
 
-async function deleteRecord(record: ConcertRecord) {
-  if (!(await warn(`移除“${record.title}”？`, '将从当前草稿移除，发布后生效。'))) return
+async function deleteCurrentRecord() {
+  if (!editing.value || isNewRecord.value) return
+  const target = editing.value
+  if (!(await warn(`移除“${target.title}”？`, '将从当前草稿移除，发布后生效。'))) return
   const next: Archive = JSON.parse(JSON.stringify(archive.value))
-  next.records = next.records.filter((item) => item.id !== record.id)
+  next.records = next.records.filter((item) => item.id !== target.id)
   await stage(next)
+  isNewRecord.value = false
+  editing.value = isDesktopSplit() && sorted.value.length > 0 ? JSON.parse(JSON.stringify(sorted.value[0])) : null
   message.value = '已从草稿移除。'
 }
 
@@ -165,6 +197,10 @@ async function clearDemo() {
   const next: Archive = JSON.parse(JSON.stringify(archive.value))
   next.records = next.records.filter((record) => !record.demo)
   await stage(next)
+  if (editing.value?.demo) {
+    isNewRecord.value = false
+    editing.value = isDesktopSplit() && sorted.value.length > 0 ? JSON.parse(JSON.stringify(sorted.value[0])) : null
+  }
   message.value = '已清空示例记录。'
 }
 
@@ -181,23 +217,12 @@ async function connect() {
   const value = token.value
   token.value = ''
   try {
-    client?.disconnect()
-    client = new GithubArchive(config.value, value)
-    const remote = await client.connect()
-    if (!dirty.value) {
-      replaceBaseline(remote)
-      message.value = '仓库已连接，已同步线上最新内容。'
-    } else {
-      message.value = '仓库已连接，已保留当前本地草稿，可直接发布。'
-    }
-    connected.value = true
-    try {
-      localStorage.setItem('concshow-repository', JSON.stringify(config.value))
-    } catch {}
+    const result = await connectGithubRepo(value)
+    message.value =
+      result === 'synced'
+        ? '仓库已连接，已同步线上最新内容。'
+        : '仓库已连接，已保留当前本地草稿，可直接发布。'
   } catch (caught) {
-    client?.disconnect()
-    client = null
-    connected.value = false
     error.value = caught instanceof Error ? caught.message : '连接失败'
   } finally {
     busy.value = false
@@ -205,6 +230,7 @@ async function connect() {
 }
 
 async function syncRemote() {
+  const client = getGithubClient()
   if (!client) return
   if (
     dirty.value &&
@@ -217,6 +243,10 @@ async function syncRemote() {
     const remote = await client.connect()
     replaceBaseline(remote)
     await draftTransaction('delete').catch(() => {})
+    if (tab.value === 'records') {
+      isNewRecord.value = false
+      editing.value = isDesktopSplit() && sorted.value.length > 0 ? JSON.parse(JSON.stringify(sorted.value[0])) : null
+    }
     message.value = '已从 GitHub 同步最新内容。'
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '同步失败'
@@ -226,18 +256,22 @@ async function syncRemote() {
 }
 
 function disconnect() {
-  client?.disconnect()
-  client = null
-  connected.value = false
+  disconnectGithubRepo(true)
   token.value = ''
-  message.value = '已断开仓库连接。'
+  message.value = '已断开仓库连接并清除本地令牌。'
 }
 
 async function publish() {
+  if (!githubConnected.value && !local) {
+    await changeTab('publish')
+    message.value = '请先连接 GitHub 仓库后再发布。'
+    return
+  }
   clearStatus()
   busy.value = true
   try {
     const next: Archive = JSON.parse(JSON.stringify(archive.value))
+    const client = getGithubClient()
     if (client) {
       const url = await client.publish(
         next,
@@ -314,6 +348,10 @@ async function importBackup(event: Event) {
       throw new Error('备份图片数据无效')
     pendingAssets.value = assets
     await stage(next)
+    if (tab.value === 'records') {
+      isNewRecord.value = false
+      editing.value = isDesktopSplit() && sorted.value.length > 0 ? JSON.parse(JSON.stringify(sorted.value[0])) : null
+    }
     message.value = '已导入备份到草稿。'
   } catch (caught) {
     error.value =
@@ -334,6 +372,10 @@ async function restore() {
       return
     const result = await restoreDraft()
     await closeTopLayer(draftDialog.value)
+    if (result && tab.value === 'records') {
+      isNewRecord.value = false
+      editing.value = isDesktopSplit() && sorted.value.length > 0 ? JSON.parse(JSON.stringify(sorted.value[0])) : null
+    }
     message.value = result ? '已恢复浏览器草稿。' : '没有可恢复的草稿。'
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '恢复失败'
@@ -348,6 +390,10 @@ async function dismissRecoverableDraft() {
 async function discard() {
   if (!(await warn('放弃全部未发布改动？', '将恢复为上次发布或读取时的内容。'))) return
   await discardDraft()
+  if (tab.value === 'records') {
+    isNewRecord.value = false
+    editing.value = isDesktopSplit() && sorted.value.length > 0 ? JSON.parse(JSON.stringify(sorted.value[0])) : null
+  }
   message.value = '已恢复到上次保存的版本。'
 }
 
@@ -363,28 +409,37 @@ onBeforeRouteLeave(
 )
 
 onMounted(async () => {
-  try {
-    const saved = JSON.parse(localStorage.getItem('concshow-repository') || 'null')
-    if (saved?.owner && saved?.repo && saved?.branch) config.value = saved
-  } catch {}
   window.addEventListener('beforeunload', beforeUnload)
   if (draftDialog.value) {
     cleanupDraftDismiss = setupDialogLightDismiss(draftDialog.value, () => {})
   }
+  selectInitialRecord()
   try {
     if (!dirty.value && (await draftTransaction('read'))) {
       draftDialog.value?.removeAttribute('data-closing')
       draftDialog.value?.showModal()
     }
   } catch {}
+  try {
+    const autoResult = await autoConnectGithub()
+    if (autoResult === 'synced') {
+      if (tab.value === 'records' && !editDirty.value) {
+        isNewRecord.value = false
+        editing.value = isDesktopSplit() && sorted.value.length > 0 ? JSON.parse(JSON.stringify(sorted.value[0])) : null
+      }
+      message.value = '已自动连接 GitHub 仓库并同步最新内容。'
+    } else if (autoResult === 'kept-draft') {
+      message.value = '已自动连接 GitHub 仓库，保留当前本地草稿。'
+    }
+  } catch (caught) {
+    error.value = caught instanceof Error ? `自动连接仓库失败：${caught.message}` : '自动连接仓库失败'
+  }
 })
 
 onUnmounted(() => {
   clearTimeout(toastTimer)
   cleanupDraftDismiss?.()
   window.removeEventListener('beforeunload', beforeUnload)
-  disconnect()
-  clearR2Secrets()
 })
 </script>
 
@@ -393,81 +448,142 @@ onUnmounted(() => {
     <h1 class="visually-hidden">观演管理</h1>
 
     <div class="admin-shell">
-      <aside class="admin-sidebar">
-        <button type="button" :class="{ active: tab === 'records' }" @click="changeTab('records')">
-          <BookOpen :size="16" />观演记录 <span>{{ archive!.records.length }}</span>
-        </button>
-        <button type="button" :class="{ active: tab === 'settings' }" @click="changeTab('settings')">
-          <Settings2 :size="16" />站点设置
-        </button>
-        <button type="button" :class="{ active: tab === 'publish' }" @click="changeTab('publish')">
-          <CloudUpload :size="16" />发布与同步 <i v-if="dirty" />
-        </button>
+      <header class="admin-topbar">
+        <nav class="admin-tabs" aria-label="后台分区">
+          <button type="button" :class="{ active: tab === 'records' }" @click="changeTab('records')">
+            <BookOpen :size="15" />
+            <span>观演记录</span>
+            <span class="tab-count">{{ archive!.records.length }}</span>
+          </button>
+          <button type="button" :class="{ active: tab === 'settings' }" @click="changeTab('settings')">
+            <Settings2 :size="15" />
+            <span>站点设置</span>
+          </button>
+          <button type="button" :class="{ active: tab === 'publish' }" @click="changeTab('publish')">
+            <CloudUpload :size="15" />
+            <span>仓库与图床</span>
+            <i v-if="!githubConnected && !local" class="tab-dot-warn" title="尚未连接仓库" />
+          </button>
+        </nav>
 
-        <div class="sidebar-status">
-          <div class="sidebar-status-row">
+        <div class="admin-topbar-right">
+          <button
+            type="button"
+            class="conn-status-pill"
+            :class="{ connected: githubConnected, local: !githubConnected && local }"
+            :title="draftNotice || '点击查看仓库连接与图床设置'"
+            @click="changeTab('publish')"
+          >
             <span class="live-dot" :class="{ unsaved: dirty }" />
-            <b>{{ dirty ? '待发布' : '已同步' }}</b>
+            <span>
+              {{
+                githubConnecting
+                  ? '正在连接…'
+                  : githubConnected
+                    ? `${githubConfig.owner}/${githubConfig.repo}`
+                    : local
+                      ? '本地开发'
+                      : '未连接仓库'
+              }}
+            </span>
+          </button>
+
+          <div class="topbar-tools">
+            <button type="button" class="icon-button" title="导出 JSON 备份" aria-label="导出备份" @click="download">
+              <Download :size="14" />
+            </button>
+            <label class="icon-button topbar-upload-btn" title="导入 JSON 备份" aria-label="导入备份">
+              <Upload :size="14" />
+              <input type="file" accept="application/json,.json" :disabled="busy" @change="importBackup" />
+            </label>
+            <button type="button" class="icon-button" title="恢复浏览器草稿" aria-label="恢复草稿" @click="restore">
+              <RotateCcw :size="14" />
+            </button>
           </div>
-          <p>{{ connected ? 'GitHub 已连接' : local ? '本地开发模式' : '未连接仓库' }}</p>
-          <p v-if="draftNotice">{{ draftNotice }}</p>
+
+          <button
+            v-if="dirty"
+            type="button"
+            class="button small topbar-publish-btn"
+            :disabled="busy"
+            @click="publish"
+          >
+            <CloudUpload :size="14" />
+            {{
+              busy
+                ? '发布中…'
+                : githubConnected
+                  ? '发布到 GitHub'
+                  : local
+                    ? '保存到本地'
+                    : '连接并发布'
+            }}
+          </button>
         </div>
+      </header>
 
-        <div class="sidebar-tools">
-          <button type="button" @click="download"><Download :size="14" />导出备份</button>
-          <label>
-            <Upload :size="14" />导入备份
-            <input type="file" accept="application/json,.json" :disabled="busy" @change="importBackup" />
-          </label>
-          <button type="button" @click="restore"><RotateCcw :size="14" />恢复草稿</button>
-        </div>
-      </aside>
+      <div v-if="tab === 'records'" class="admin-workspace" :class="{ 'has-editing': Boolean(editing) }">
+        <aside class="admin-master-pane">
+          <AdminRecordList
+            :records="sorted"
+            :selected-id="editing?.id"
+            :is-new="isNewRecord"
+            :published-count="publishedCount"
+            :demo-count="demoCount"
+            @create="startEdit()"
+            @select="startEdit"
+            @clear-demo="clearDemo"
+          />
+        </aside>
 
-      <div class="admin-content">
-        <AdminRecordList
-          v-if="tab === 'records' && !editing"
-          :records="sorted"
-          :published-count="publishedCount"
-          :demo-count="demoCount"
-          @create="startEdit()"
-          @edit="startEdit"
-          @delete="deleteRecord"
-          @toggle-field="toggleRecordField"
-          @clear-demo="clearDemo"
-        />
+        <section class="admin-detail-pane">
+          <AdminRecordForm
+            v-if="editing"
+            ref="recordFormRef"
+            :record="editing"
+            :is-new="isNewRecord"
+            :categories="archive!.settings.categories"
+            :archive-tags="[...new Set(archive!.records.flatMap((r) => r.tags))]"
+            v-model:busy="busy"
+            @save="saveRecord"
+            @cancel="closeEdit"
+            @delete="deleteCurrentRecord"
+            @toggle-field="toggleRecordField"
+            @error="error = $event"
+            @status="message = $event"
+          />
 
-        <AdminRecordForm
-          v-else-if="tab === 'records' && editing"
-          ref="recordFormRef"
-          :record="editing"
-          :is-new="isNewRecord"
-          :categories="archive!.settings.categories"
-          :archive-tags="[...new Set(archive!.records.flatMap((r) => r.tags))]"
-          v-model:busy="busy"
-          @save="saveRecord"
-          @cancel="closeEdit"
-          @error="error = $event"
-          @status="message = $event"
-        />
+          <div v-else class="detail-empty-placeholder">
+            <BookOpen :size="30" :stroke-width="1.3" />
+            <h3>选择一条观演记录进行编辑</h3>
+            <p>左侧列表会始终保持可见，方便随时切换与对照。</p>
+            <button type="button" class="button small" @click="startEdit()">
+              <Plus :size="15" />新增记录
+            </button>
+          </div>
+        </section>
+      </div>
 
+      <div v-else-if="tab === 'settings'" class="admin-panel-single">
         <AdminSettingsForm
-          v-else-if="tab === 'settings'"
           ref="settingsFormRef"
           :settings="archive!.settings"
           :archive="archive!"
           @save="saveSettings"
           @error="error = $event"
         />
+      </div>
 
+      <div v-else class="admin-panel-single">
         <AdminPublishPanel
-          v-else
           :dirty="dirty"
           :busy="busy"
           :local="local"
-          :connected="connected"
+          :connected="githubConnected"
+          :connecting="githubConnecting"
           :record-count="archive!.records.length"
           :pending-count="pendingAssets.length"
-          :config="config"
+          :config="githubConfig"
           v-model:token="token"
           @publish="publish"
           @discard="discard"
@@ -495,12 +611,13 @@ onUnmounted(() => {
           查看提交 <ArrowUpRight :size="13" />
         </a>
         <button
-          v-else-if="dirty && tab !== 'publish'"
+          v-else-if="dirty && (githubConnected || local)"
           type="button"
           class="toast-action"
-          @click="changeTab('publish')"
+          :disabled="busy"
+          @click="publish"
         >
-          去发布 <ArrowUpRight :size="13" />
+          立即发布 <ArrowUpRight :size="13" />
         </button>
         <button
           type="button"

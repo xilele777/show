@@ -12,13 +12,23 @@ import {
   RefreshCw
 } from 'lucide-vue-next'
 import type { GithubConfig } from '../../lib/github'
-import { clearR2Secrets, isR2Ready, r2Config, saveR2PublicConfig } from '../../lib/r2'
+import {
+  clearR2Secrets,
+  isR2Ready,
+  r2Config,
+  rememberR2Secrets,
+  saveR2PublicConfig,
+  saveR2Secrets,
+  setRememberR2Secrets
+} from '../../lib/r2'
+import { rememberGithubToken, setRememberGithubToken } from '../../lib/session'
 
 defineProps<{
   dirty: boolean
   busy: boolean
   local: boolean
   connected: boolean
+  connecting?: boolean
   recordCount: number
   pendingCount: number
   config: GithubConfig
@@ -40,6 +50,7 @@ const showR2Secret = ref(false)
 
 function saveR2() {
   saveR2PublicConfig()
+  saveR2Secrets()
   emit('status', isR2Ready() ? 'Cloudflare R2 图床已就绪，上传照片将直传 R2。' : '已保存 R2 基础配置（填写密钥后即可启用直传）。')
 }
 </script>
@@ -185,11 +196,19 @@ function saveR2() {
               <Eye v-else :size="15" />
             </button>
           </div>
-          <small>仅暂存在当前页面内存，需要仓库 Contents 读写权限。</small>
+          <small>勾选“记住令牌”后，下次打开后台将自动重连仓库；随时可断开并清除。</small>
         </label>
       </div>
-      <button class="button secondary small" :disabled="busy">
-        <Github :size="15" />{{ busy ? '正在连接…' : '连接仓库' }}
+      <label class="remember-check">
+        <input
+          type="checkbox"
+          :checked="rememberGithubToken"
+          @change="setRememberGithubToken(($event.target as HTMLInputElement).checked)"
+        />
+        在此浏览器记住令牌（下次自动连接）
+      </label>
+      <button class="button secondary small" :disabled="busy || connecting">
+        <Github :size="15" />{{ connecting || busy ? '正在连接…' : '连接仓库' }}
       </button>
     </form>
 
@@ -354,6 +373,15 @@ function saveR2() {
         </template>
       </div>
 
+      <label class="remember-check" style="margin-top: 12px">
+        <input
+          type="checkbox"
+          :checked="rememberR2Secrets"
+          @change="setRememberR2Secrets(($event.target as HTMLInputElement).checked)"
+        />
+        在此浏览器记住 R2 密钥（刷新后保持可用）
+      </label>
+
       <div class="connected-repo-actions" style="margin-top: 14px">
         <button type="submit" class="button secondary small">保存 R2 配置</button>
         <button
@@ -362,7 +390,7 @@ function saveR2() {
           class="button secondary small"
           @click="clearR2Secrets"
         >
-          清除内存密钥
+          清除本地密钥
         </button>
       </div>
     </form>
@@ -373,7 +401,7 @@ function saveR2() {
         <li>在 Cloudflare Dashboard → R2 创建存储桶，并绑定公开域名或开启 <code>r2.dev</code> 公开访问。</li>
         <li>若使用 S3 API 直传：创建具备该桶 Object Read &amp; Write 权限的 R2 API Token，并在存储桶 Settings → CORS Policy 允许来源站点的 <code>PUT</code> 请求（含 <code>content-type</code>、<code>x-amz-content-sha256</code>、<code>x-amz-date</code>、<code>authorization</code> 头）。</li>
         <li>若不希望浏览器持有 R2 API Key，可部署一个绑定 R2 存储桶的 Cloudflare Worker，接收带 <code>Authorization: Bearer</code> 的 <code>PUT /&lt;key&gt;</code> 请求并写入 <code>env.BUCKET.put(key, request.body)</code>。</li>
-        <li>密钥仅暂存在当前页面内存，刷新自动清除；你也可以直接在编辑记录时粘贴已上传好的 <code>https://</code> R2 图片链接。</li>
+        <li>勾选“记住 R2 密钥”后，下次进入后台无需重复填写；如在公共设备使用，请取消勾选或点击“清除本地密钥”。</li>
       </ol>
     </details>
   </section>

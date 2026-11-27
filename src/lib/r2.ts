@@ -1,5 +1,6 @@
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import type { PendingAsset } from './schema'
+import publicConfig from './r2-public.json'
 
 export interface R2Config {
   mode: 's3' | 'worker'
@@ -13,11 +14,18 @@ export interface R2Config {
 }
 
 const STORAGE_KEY = 'concshow-r2-public'
+const SECRETS_KEY = 'concshow-r2-secrets'
+const REMEMBER_SECRETS_KEY = 'concshow-r2-remember'
+
+const DEFAULT_PUBLIC_CONFIG: Pick<R2Config, 'mode' | 'accountId' | 'bucket' | 'publicUrl' | 'workerUrl'> = {
+  ...publicConfig,
+  mode: 'worker'
+}
 
 function loadSavedPublicConfig(): Pick<R2Config, 'mode' | 'accountId' | 'bucket' | 'publicUrl' | 'workerUrl'> {
   try {
     const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-    if (raw && typeof raw === 'object') {
+    if (raw && typeof raw === 'object' && typeof raw.publicUrl === 'string' && raw.publicUrl.trim()) {
       return {
         mode: raw.mode === 'worker' ? 'worker' : 's3',
         accountId: typeof raw.accountId === 'string' ? raw.accountId : '',
@@ -27,15 +35,47 @@ function loadSavedPublicConfig(): Pick<R2Config, 'mode' | 'accountId' | 'bucket'
       }
     }
   } catch {}
-  return { mode: 's3', accountId: '', bucket: '', publicUrl: '', workerUrl: '' }
+  return { ...DEFAULT_PUBLIC_CONFIG }
 }
+
+function loadRememberR2(): boolean {
+  try {
+    const raw = localStorage.getItem(REMEMBER_SECRETS_KEY)
+    return raw === null ? true : raw === '1'
+  } catch {
+    return true
+  }
+}
+
+function loadSavedSecrets(): Pick<R2Config, 'accessKeyId' | 'secretAccessKey' | 'workerToken'> {
+  if (!loadRememberR2()) return { accessKeyId: '', secretAccessKey: '', workerToken: '' }
+  try {
+    const raw = JSON.parse(localStorage.getItem(SECRETS_KEY) || 'null')
+    if (raw && typeof raw === 'object') {
+      return {
+        accessKeyId: typeof raw.accessKeyId === 'string' ? raw.accessKeyId : '',
+        secretAccessKey: typeof raw.secretAccessKey === 'string' ? raw.secretAccessKey : '',
+        workerToken: typeof raw.workerToken === 'string' ? raw.workerToken : ''
+      }
+    }
+  } catch {}
+  return { accessKeyId: '', secretAccessKey: '', workerToken: '' }
+}
+
+export const rememberR2Secrets = ref<boolean>(loadRememberR2())
 
 export const r2Config = reactive<R2Config>({
   ...loadSavedPublicConfig(),
-  accessKeyId: '',
-  secretAccessKey: '',
-  workerToken: ''
+  ...loadSavedSecrets()
 })
+
+export function setRememberR2Secrets(value: boolean) {
+  rememberR2Secrets.value = value
+  try {
+    localStorage.setItem(REMEMBER_SECRETS_KEY, value ? '1' : '0')
+    if (!value) localStorage.removeItem(SECRETS_KEY)
+  } catch {}
+}
 
 export function saveR2PublicConfig() {
   try {
@@ -52,10 +92,30 @@ export function saveR2PublicConfig() {
   } catch {}
 }
 
+export function saveR2Secrets() {
+  try {
+    if (rememberR2Secrets.value) {
+      localStorage.setItem(
+        SECRETS_KEY,
+        JSON.stringify({
+          accessKeyId: r2Config.accessKeyId.trim(),
+          secretAccessKey: r2Config.secretAccessKey.trim(),
+          workerToken: r2Config.workerToken.trim()
+        })
+      )
+    } else {
+      localStorage.removeItem(SECRETS_KEY)
+    }
+  } catch {}
+}
+
 export function clearR2Secrets() {
   r2Config.accessKeyId = ''
   r2Config.secretAccessKey = ''
   r2Config.workerToken = ''
+  try {
+    localStorage.removeItem(SECRETS_KEY)
+  } catch {}
 }
 
 export function isR2Ready(): boolean {
