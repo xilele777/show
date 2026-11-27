@@ -10,7 +10,7 @@ import {
   wrapIndex
 } from '../src/lib/deck'
 import { filterRecords, readFilters } from '../src/lib/filters'
-import seed from '../public/content/archive.json'
+import { archiveFixture } from './fixtures/archive'
 import { archiveSchema } from '../src/lib/schema'
 
 describe('poster deck motion', () => {
@@ -59,11 +59,11 @@ describe('poster deck motion', () => {
 })
 
 describe('record filters', () => {
-  const records = archiveSchema.parse(seed).records
+  const records = archiveSchema.parse(archiveFixture).records
 
   it('reads only string query values and matches keywords case-insensitively', () => {
     const filters = readFilters({ q: ' LIVEHOUSE ', year: ['2025'] })
     expect(filters.year).toBe('')
-    expect(filterRecords(records, filters).every((r) => /livehouse/i.test(JSON.stringify(r)))).toBe(true)
+    expect(filterRecords(records, filters).map((record) => record.id)).toEqual(['test-livehouse'])
   })
 })

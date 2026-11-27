@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import seed from '../public/content/archive.json'
+import siteArchive from '../public/content/archive.json'
 import { archiveSchema, recordSchema } from '../src/lib/schema'
 import { GithubArchive } from '../src/lib/github'
+import { archiveFixture } from './fixtures/archive'
 
-const data = archiveSchema.parse(seed)
+const data = archiveSchema.parse(archiveFixture)
 const next = () => {
   const archive = structuredClone(data)
   archive.settings.owner = '测试作者'
@@ -48,8 +49,10 @@ const client = () =>
 afterEach(() => vi.unstubAllGlobals())
 
 describe('archive content boundaries', () => {
-  it('accepts the sample archive and rejects invalid calendar dates', () => {
-    expect(data.records).toHaveLength(6)
+  it('validates the deployed content without assuming record counts or site settings', () => {
+    expect(archiveSchema.safeParse(siteArchive).success).toBe(true)
+  })
+  it('rejects invalid calendar dates', () => {
     expect(recordSchema.safeParse({ ...data.records[0], date: '2025-02-30' }).success).toBe(false)
   })
   it('rejects path traversal and duplicated IDs', () => {
@@ -65,6 +68,24 @@ describe('archive content boundaries', () => {
   })
 })
 describe('GitHub publishing', () => {
+  it.each([0, 1])(
+    'publishes %i records and customized site settings after removing examples',
+    async (count) => {
+      const calls = mockGit()
+      const connection = client()
+      await connection.connect()
+      const archive = next()
+      archive.records = archive.records.slice(0, count)
+      archive.settings.name = '我的现场'
+      archive.settings.englishName = 'MY CONCERTS'
+      const url = await connection.publish(archive, [])
+      expect(url).toContain('/commit/head-2')
+      const content = calls.find((call) => call.path === '/git/blobs')?.body?.content as string
+      expect(archiveSchema.parse(JSON.parse(content))).toEqual(archive)
+      expect(calls.at(-1)?.body).toEqual({ sha: 'head-2', force: false })
+    }
+  )
+
   it('reads Chinese content and commits content + images together without forcing the branch', async () => {
     const calls = mockGit()
     const connection = client()
