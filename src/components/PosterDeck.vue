@@ -506,6 +506,7 @@ function isTypingTarget(el: EventTarget | null): boolean {
 function onWindowKeydown(event: KeyboardEvent) {
   if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return
   if (isTypingTarget(event.target) || hasOpenDialog()) return
+  if (document.getElementById('filter-popover')?.matches(':popover-open')) return
   const inStage = Boolean(stageEl.value?.contains(document.activeElement))
   switch (event.key) {
     case 'ArrowRight':
@@ -743,8 +744,7 @@ onUnmounted(() => {
         class="poster-card"
         :class="{ 'is-active': index === activeIndex }"
         :data-index="index"
-        role="group"
-        aria-roledescription="slide"
+        :aria-current="index === activeIndex ? 'true' : undefined"
         :aria-label="`${index + 1} / ${records.length}：${record.title}`"
         @click="handleCardClick(record, index)"
       >
@@ -756,7 +756,7 @@ onUnmounted(() => {
           draggable="false"
         />
         <div v-else class="poster-fallback">
-          <span>{{ record.type }}</span>
+          <span class="poster-fallback-meta">{{ record.date.replaceAll('-', '.') }} · {{ record.city }}</span>
           <strong>{{ record.title }}</strong>
         </div>
 

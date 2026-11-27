@@ -216,7 +216,10 @@ onUnmounted(() => {
     aria-hidden="true"
   />
 
-  <header class="floating-hud" :class="{ 'is-hidden': hudHidden }">
+  <header
+    class="floating-hud"
+    :class="{ 'is-hidden': hudHidden, 'has-scrim': isScrolled || route.path === '/admin' }"
+  >
     <RouterLink v-slot="{ href, navigate }" custom to="/">
       <a
         :href="href"

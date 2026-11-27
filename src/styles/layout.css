@@ -54,8 +54,32 @@
   gap: 12px;
   padding: 18px 24px;
   pointer-events: none;
-  opacity: 0.56;
+  opacity: 0.88;
   transition: transform 0.34s var(--ease-out-expo), opacity 0.3s ease;
+}
+
+.floating-hud::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -18px;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--canvas) 92%, transparent) 0%,
+    color-mix(in srgb, var(--canvas) 70%, transparent) 55%,
+    transparent 100%
+  );
+  transition: opacity 0.28s ease;
+}
+
+.floating-hud.has-scrim {
+  opacity: 1;
+}
+
+.floating-hud.has-scrim::before {
+  opacity: 1;
 }
 
 .floating-hud:hover,
@@ -136,8 +160,8 @@
 .hud-icon-btn {
   width: 34px;
   height: 34px;
-  background: var(--glass);
-  border-color: var(--line);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-color: var(--line-strong);
   backdrop-filter: blur(14px) saturate(150%);
   -webkit-backdrop-filter: blur(14px) saturate(150%);
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDown,
@@ -25,12 +25,22 @@ const router = useRouter()
 
 const mode = ref<'deck' | 'timeline'>('deck')
 const hudReady = ref(false)
+const filterOpen = ref(false)
 const filters = computed(() => readFilters(route.query))
 const query = computed(() => filters.value.q)
+const searchDraft = ref(query.value)
+const isComposing = ref(false)
+let searchTimer: ReturnType<typeof setTimeout> | undefined
 const year = computed(() => filters.value.year)
 const city = computed(() => filters.value.city)
 const type = computed(() => filters.value.type)
 const status = computed(() => filters.value.status)
+
+watch(query, (val) => {
+  if (!isComposing.value && val !== searchDraft.value) {
+    searchDraft.value = val
+  }
+})
 
 const categories = computed(() => {
   const configured = archive.value?.settings.categories
@@ -41,6 +51,10 @@ onMounted(() => {
   hudReady.value = true
 })
 
+onUnmounted(() => {
+  clearTimeout(searchTimer)
+})
+
 async function updateQuery(next: Record<string, unknown>) {
   await router.replace({ query: next as typeof route.query })
 }
@@ -49,7 +63,35 @@ async function applyFilter(key: string, value: string) {
   await updateQuery({ ...route.query, [key]: value || undefined })
 }
 
+function onSearchInput(event: Event) {
+  const value = (event.target as HTMLInputElement).value
+  searchDraft.value = value
+  if (isComposing.value) return
+  clearTimeout(searchTimer)
+  if (!value) {
+    void applyFilter('q', '')
+    return
+  }
+  searchTimer = setTimeout(() => {
+    void applyFilter('q', searchDraft.value)
+  }, 180)
+}
+
+function onSearchCompositionEnd(event: CompositionEvent) {
+  isComposing.value = false
+  searchDraft.value = (event.target as HTMLInputElement).value
+  clearTimeout(searchTimer)
+  void applyFilter('q', searchDraft.value)
+}
+
+function onPopoverToggle(event: Event) {
+  const toggleEvent = event as ToggleEvent
+  filterOpen.value = toggleEvent.newState === 'open'
+}
+
 async function resetFilters() {
+  clearTimeout(searchTimer)
+  searchDraft.value = ''
   await updateQuery(route.query.record ? { record: route.query.record } : {})
 }
 
@@ -58,6 +100,9 @@ async function switchMode(nextMode: 'deck' | 'timeline') {
   await runViewTransition(async () => {
     mode.value = nextMode
     await nextTick()
+    if (nextMode === 'deck') {
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+    }
   })
 }
 
@@ -102,6 +147,7 @@ const timelineGroups = computed(() => {
         popovertarget="filter-popover"
         class="icon-button hud-icon-btn filter-trigger-btn"
         :class="{ 'has-active': filtered }"
+        :aria-expanded="filterOpen"
         aria-label="筛选观演档案"
         title="筛选"
       >
@@ -133,7 +179,13 @@ const timelineGroups = computed(() => {
     </div>
   </Teleport>
 
-  <search id="filter-popover" popover="auto" class="filter-popover" aria-label="筛选观演档案">
+  <search
+    id="filter-popover"
+    popover="auto"
+    class="filter-popover"
+    aria-label="筛选观演档案"
+    @toggle="onPopoverToggle"
+  >
     <div class="filter-popover-head">
       <span>筛选</span>
       <div class="filter-popover-head-right">
@@ -208,10 +260,12 @@ const timelineGroups = computed(() => {
       <SearchIcon :size="14" />
       <input
         type="search"
-        :value="query"
+        :value="searchDraft"
         placeholder="搜索演出、乐团、指挥、独奏家、曲目"
         aria-label="搜索观演档案"
-        @input="applyFilter('q', ($event.target as HTMLInputElement).value)"
+        @compositionstart="isComposing = true"
+        @compositionend="onSearchCompositionEnd"
+        @input="onSearchInput"
       />
     </label>
 
