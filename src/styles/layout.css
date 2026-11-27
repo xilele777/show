@@ -95,6 +95,12 @@
   place-items: center;
   flex-shrink: 0;
   box-shadow: 0 4px 14px var(--accent-soft);
+  transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s ease;
+}
+
+.floating-brand.is-holding .brand-mark {
+  transform: scale(1.16);
+  box-shadow: 0 0 0 6px var(--accent-soft);
 }
 
 .brand-cn {

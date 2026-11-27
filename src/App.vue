@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   AudioLines,
   Sun,
   Moon,
   Monitor,
   ArrowUpRight,
-  SlidersHorizontal,
   Home as HomeIcon,
   Disc3,
   X
@@ -18,6 +17,7 @@ import RecordDialog from './components/RecordDialog.vue'
 
 const themes = ['system', 'light', 'dark'] as const
 const route = useRoute()
+const router = useRouter()
 const theme = ref<(typeof themes)[number]>('system')
 
 try {
@@ -40,6 +40,88 @@ const supportsScrollTimeline =
   CSS.supports?.('(animation-timeline: scroll()) and (animation-range: 0% 100%)')
 
 let lastScrollY = 0
+
+// Stealth admin entry (mouse gesture, long-press, triple-click, or Alt+Shift+A)
+const brandHolding = ref(false)
+let brandPointerId = -1
+let brandDownX = 0
+let brandDownY = 0
+let brandTriggered = false
+let holdTimer: ReturnType<typeof setTimeout> | undefined
+let holdVisualTimer: ReturnType<typeof setTimeout> | undefined
+let brandClickCount = 0
+let brandClickTimer: ReturnType<typeof setTimeout> | undefined
+
+function enterAdminStealth() {
+  brandTriggered = true
+  brandHolding.value = false
+  clearTimeout(holdTimer)
+  clearTimeout(holdVisualTimer)
+  if (route.path !== '/admin') void router.push('/admin')
+}
+
+function onBrandPointerDown(event: PointerEvent) {
+  if (event.button !== 0 || route.path === '/admin') return
+  brandPointerId = event.pointerId
+  brandDownX = event.clientX
+  brandDownY = event.clientY
+  brandTriggered = false
+  clearTimeout(holdTimer)
+  clearTimeout(holdVisualTimer)
+  holdVisualTimer = setTimeout(() => {
+    brandHolding.value = true
+  }, 180)
+  holdTimer = setTimeout(() => {
+    enterAdminStealth()
+  }, 680)
+}
+
+function onBrandPointerMove(event: PointerEvent) {
+  if (event.pointerId !== brandPointerId || brandTriggered) return
+  const dx = event.clientX - brandDownX
+  const dy = event.clientY - brandDownY
+  if (dx >= 28 && dy >= 18) {
+    enterAdminStealth()
+  } else if (Math.hypot(dx, dy) > 16) {
+    brandHolding.value = false
+    clearTimeout(holdTimer)
+    clearTimeout(holdVisualTimer)
+  }
+}
+
+function resetBrandGesture() {
+  brandPointerId = -1
+  brandHolding.value = false
+  clearTimeout(holdTimer)
+  clearTimeout(holdVisualTimer)
+}
+
+function onBrandClick(event: MouseEvent) {
+  if (brandTriggered) {
+    event.preventDefault()
+    brandTriggered = false
+    return
+  }
+  if (route.path === '/admin') return
+  brandClickCount += 1
+  clearTimeout(brandClickTimer)
+  if (brandClickCount >= 3) {
+    event.preventDefault()
+    brandClickCount = 0
+    enterAdminStealth()
+    return
+  }
+  brandClickTimer = setTimeout(() => {
+    brandClickCount = 0
+  }, 950)
+}
+
+function onGlobalKeydown(event: KeyboardEvent) {
+  if (event.altKey && event.shiftKey && event.key.toLowerCase() === 'a') {
+    event.preventDefault()
+    void router.push(route.path === '/admin' ? '/' : '/admin')
+  }
+}
 
 // About modal
 const aboutDialog = ref<HTMLDialogElement>()
@@ -110,6 +192,7 @@ onMounted(() => {
   applyTheme()
   media.addEventListener('change', applyTheme)
   window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('keydown', onGlobalKeydown)
   handleScroll()
   loadArchive()
   if (aboutDialog.value) {
@@ -120,6 +203,10 @@ onMounted(() => {
 onUnmounted(() => {
   media.removeEventListener('change', applyTheme)
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('keydown', onGlobalKeydown)
+  clearTimeout(holdTimer)
+  clearTimeout(holdVisualTimer)
+  clearTimeout(brandClickTimer)
   cleanupAboutDismiss?.()
 })
 </script>
@@ -140,7 +227,17 @@ onUnmounted(() => {
   />
 
   <header class="floating-hud" :class="{ 'is-hidden': hudHidden }">
-    <RouterLink to="/" class="floating-brand" aria-label="余响，返回首页">
+    <RouterLink
+      to="/"
+      class="floating-brand"
+      :class="{ 'is-holding': brandHolding }"
+      aria-label="余响，返回首页"
+      @pointerdown="onBrandPointerDown"
+      @pointermove="onBrandPointerMove"
+      @pointerup="resetBrandGesture"
+      @pointercancel="resetBrandGesture"
+      @click="onBrandClick"
+    >
       <span class="brand-mark"><AudioLines :size="15" :stroke-width="1.9" /></span>
       <span class="brand-cn">{{ archive?.settings.name || '余响' }}</span>
     </RouterLink>
@@ -179,15 +276,6 @@ onUnmounted(() => {
         title="返回首页"
       >
         <HomeIcon :size="15" />
-      </RouterLink>
-      <RouterLink
-        v-else
-        to="/admin"
-        class="icon-button hud-icon-btn"
-        aria-label="管理记录"
-        title="管理记录"
-      >
-        <SlidersHorizontal :size="15" />
       </RouterLink>
     </div>
   </header>
