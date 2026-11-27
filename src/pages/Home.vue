@@ -11,10 +11,12 @@ import {
   MapPin,
   Search as SearchIcon,
   Star,
+  Ticket,
   X
 } from 'lucide-vue-next'
-import { visibleRecords, imageUrl } from '../lib/store'
-import { eventTypes, type ConcertRecord } from '../lib/schema'
+import { archive, visibleRecords, imageUrl } from '../lib/store'
+import { defaultEventTypes, formatCredits, type ConcertRecord } from '../lib/schema'
+import { categoryStyle } from '../lib/categories'
 import { filterRecords, hasFilters, readFilters } from '../lib/filters'
 import { runViewTransition } from '../lib/motion'
 import PosterDeck from '../components/PosterDeck.vue'
@@ -29,6 +31,12 @@ const query = computed(() => filters.value.q)
 const year = computed(() => filters.value.year)
 const city = computed(() => filters.value.city)
 const type = computed(() => filters.value.type)
+const status = computed(() => filters.value.status)
+
+const categories = computed(() => {
+  const configured = archive.value?.settings.categories
+  return configured?.length ? configured : [...defaultEventTypes]
+})
 
 onMounted(() => {
   hudReady.value = true
@@ -63,6 +71,9 @@ const years = computed(() =>
   [...new Set(visibleRecords.value.map((r) => r.date.slice(0, 4)))].sort().reverse()
 )
 const cities = computed(() => [...new Set(visibleRecords.value.map((r) => r.city))].sort())
+const upcomingCount = computed(
+  () => visibleRecords.value.filter((r) => r.status === 'upcoming').length
+)
 
 const filtered = computed(() => hasFilters(filters.value))
 
@@ -144,7 +155,7 @@ const timelineGroups = computed(() => {
       </div>
     </div>
 
-    <div class="filter-pills" role="group" aria-label="按演出类型筛选">
+    <div class="filter-pills" role="group" aria-label="按演出分类筛选">
       <button
         type="button"
         class="filter-pill"
@@ -155,15 +166,47 @@ const timelineGroups = computed(() => {
         全部 <span>{{ visibleRecords.length }}</span>
       </button>
       <button
-        v-for="item in eventTypes"
+        v-for="item in categories"
         :key="item"
         type="button"
-        class="filter-pill"
+        class="filter-pill filter-pill--cat"
         :class="{ selected: type === item }"
+        :style="categoryStyle(item)"
         :aria-pressed="type === item"
         @click="applyFilter('type', item)"
       >
+        <i class="filter-cat-dot" aria-hidden="true" />
         {{ item }}
+      </button>
+    </div>
+
+    <div class="filter-pills filter-status-pills" role="group" aria-label="按观看状态筛选">
+      <button
+        type="button"
+        class="filter-pill"
+        :class="{ selected: !status }"
+        :aria-pressed="!status"
+        @click="applyFilter('status', '')"
+      >
+        全部状态
+      </button>
+      <button
+        type="button"
+        class="filter-pill"
+        :class="{ selected: status === 'watched' }"
+        :aria-pressed="status === 'watched'"
+        @click="applyFilter('status', 'watched')"
+      >
+        已观看
+      </button>
+      <button
+        type="button"
+        class="filter-pill filter-pill--upcoming"
+        :class="{ selected: status === 'upcoming' }"
+        :aria-pressed="status === 'upcoming'"
+        @click="applyFilter('status', 'upcoming')"
+      >
+        待观看 <span v-if="upcomingCount">{{ upcomingCount }}</span>
       </button>
     </div>
 
@@ -172,7 +215,7 @@ const timelineGroups = computed(() => {
       <input
         type="search"
         :value="query"
-        placeholder="搜索演出、音乐人、标签"
+        placeholder="搜索演出、乐团、指挥、独奏家、曲目"
         aria-label="搜索观演档案"
         @input="applyFilter('q', ($event.target as HTMLInputElement).value)"
       />
@@ -225,7 +268,8 @@ const timelineGroups = computed(() => {
             :key="record.id"
             :to="{ path: '/', query: { ...route.query, record: record.id } }"
             class="timeline-record"
-            :style="{ viewTransitionName: `record-${record.id}` }"
+            :class="{ 'is-upcoming': record.status === 'upcoming' }"
+            :style="{ ...categoryStyle(record.type), viewTransitionName: `record-${record.id}` }"
           >
             <time :datetime="record.date">{{ record.date.slice(5).replace('-', '.') }}</time>
             <div class="timeline-thumb">
@@ -238,6 +282,7 @@ const timelineGroups = computed(() => {
                   {{ record.date.slice(5).replace('-', '.') }}
                 </time>
                 <span class="timeline-type">{{ record.type }}</span>
+                <span v-if="record.status === 'upcoming'" class="timeline-upcoming">待观看</span>
                 <span
                   v-if="record.rating > 0"
                   class="rating timeline-rating"
@@ -252,12 +297,14 @@ const timelineGroups = computed(() => {
                 </span>
               </div>
               <h4>{{ record.title }}</h4>
-              <p>
-                <span v-if="record.artist" class="timeline-artist">{{ record.artist }}</span>
-                <span v-if="record.artist" class="timeline-sep" aria-hidden="true">·</span>
+              <p class="timeline-credits" v-if="formatCredits(record)">{{ formatCredits(record) }}</p>
+              <p class="timeline-submeta">
                 <span class="timeline-place">
                   <MapPin :size="12" />{{ record.city
                   }}<template v-if="record.venue"> · {{ record.venue }}</template>
+                </span>
+                <span v-if="record.seat || record.price" class="timeline-ticket">
+                  <Ticket :size="11" />{{ [record.seat, record.price].filter(Boolean).join(' · ') }}
                 </span>
               </p>
             </div>
@@ -273,9 +320,6 @@ const timelineGroups = computed(() => {
       <button v-if="filtered" type="button" class="button secondary small" @click="resetFilters">
         显示全部
       </button>
-      <RouterLink v-else to="/admin" class="button small">
-        新增记录 <ArrowUpRight :size="15" />
-      </RouterLink>
     </div>
   </div>
 </template>

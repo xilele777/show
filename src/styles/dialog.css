@@ -417,10 +417,28 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 .detail-type-pill {
   padding: 4px 11px;
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--cat-soft, var(--accent-soft));
+  color: var(--cat-color, var(--accent));
   font-size: 11px;
   font-weight: 600;
+}
+
+:root[data-theme='dark'] .detail-type-pill {
+  color: var(--cat-color-dark, var(--cat-color, var(--accent)));
+}
+
+.detail-upcoming-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--glow-soft);
+  color: #b45309;
+  border: 1px solid color-mix(in srgb, var(--glow) 38%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+:root[data-theme='dark'] .detail-upcoming-pill {
+  color: var(--glow);
 }
 
 .detail-counter {
@@ -449,6 +467,73 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   color: var(--muted);
 }
 
+/* Structured Credits (Orchestra / Conductor / Soloists) */
+.detail-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  border-left: 3px solid var(--cat-color, var(--accent));
+}
+
+:root[data-theme='dark'] .detail-credits {
+  border-left-color: var(--cat-color-dark, var(--cat-color, var(--accent)));
+}
+
+.credit-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.credit-item > span {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--muted);
+  flex-shrink: 0;
+  min-width: 30px;
+}
+
+.credit-item strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.soloist-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.soloist-chips em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+}
+
+.credit-subline {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Ticket & Venue Stub */
+.detail-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--line-strong);
+}
+
 .detail-meta {
   display: flex;
   flex-wrap: wrap;
@@ -464,12 +549,41 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   gap: 5px;
 }
 
+.detail-ticket-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+}
+
+.ticket-chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.ticket-chip--price {
+  color: var(--cat-color, var(--accent));
+  background: var(--cat-soft, var(--accent-soft));
+  border-color: transparent;
+  font-weight: 600;
+}
+
+:root[data-theme='dark'] .ticket-chip--price {
+  color: var(--cat-color-dark, var(--cat-color, var(--accent)));
+}
+
 .detail-note {
   font-size: 14.5px;
   line-height: 1.88;
   color: var(--ink-soft);
   white-space: pre-line;
-  padding-top: 6px;
+  padding-top: 2px;
 }
 
 .tags {
@@ -485,12 +599,18 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   border: 1px solid var(--line);
   font-size: 11.5px;
   color: var(--ink-soft);
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
 
 .tag-chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--cat-color, var(--accent));
+  color: var(--cat-color, var(--accent));
+  background: var(--cat-soft, var(--accent-soft));
+}
+
+:root[data-theme='dark'] .tag-chip:hover {
+  border-color: var(--cat-color-dark, var(--accent));
+  color: var(--cat-color-dark, var(--accent));
 }
 
 .setlist-block {
@@ -504,7 +624,30 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   font-weight: 500;
   letter-spacing: 0.12em;
   color: var(--muted);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.setlist-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setlist-half-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--cat-soft, var(--accent-soft));
+  color: var(--cat-color, var(--accent));
+  margin-bottom: 8px;
+}
+
+:root[data-theme='dark'] .setlist-half-badge {
+  color: var(--cat-color-dark, var(--cat-color, var(--accent)));
 }
 
 .program {
@@ -512,7 +655,7 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 9px;
 }
 
 .program li {
@@ -520,15 +663,36 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   align-items: baseline;
   gap: 12px;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--ink-soft);
 }
 
-.program li span {
+.program-num {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--accent);
+  color: var(--cat-color, var(--accent));
   flex-shrink: 0;
+}
+
+:root[data-theme='dark'] .program-num {
+  color: var(--cat-color-dark, var(--cat-color, var(--accent)));
+}
+
+.program-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.program-title {
+  font-weight: 550;
+  color: var(--ink);
+}
+
+.program-composer {
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
 .detail-footer {

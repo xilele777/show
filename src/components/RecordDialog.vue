@@ -11,10 +11,12 @@ import {
   Copy,
   Check,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Ticket
 } from 'lucide-vue-next'
 import { archive, visibleRecords, imageUrl } from '../lib/store'
-import { dateLabel } from '../lib/schema'
+import { dateLabel, normalizeProgramItem, type ProgramItem } from '../lib/schema'
+import { categoryStyle } from '../lib/categories'
 import { filterRecords, readFilters } from '../lib/filters'
 import { closeTopLayer, setupDialogLightDismiss } from '../lib/motion'
 
@@ -53,6 +55,29 @@ const activeImage = computed(() => activeRecord.value?.images[photo.value])
 const isWidePhoto = computed(() => (activeImage.value ? Boolean(wideMap.value[activeImage.value]) : false))
 const photoTransition = computed(() => (photoDir.value > 0 ? 'photo-next' : 'photo-prev'))
 const recordTransition = computed(() => (recordDir.value > 0 ? 'detail-next' : 'detail-prev'))
+
+const hasStructuredCredits = computed(() => {
+  const rec = activeRecord.value
+  return Boolean(rec && (rec.orchestra || rec.conductor || rec.soloists.length))
+})
+
+const groupedProgram = computed(() => {
+  const rec = activeRecord.value
+  if (!rec || !rec.program.length) return []
+  const normalized = rec.program.map(normalizeProgramItem)
+  const groups: { half: string; items: (ProgramItem & { index: number })[] }[] = []
+  let idx = 1
+  for (const item of normalized) {
+    const label = item.half || ''
+    const existing = groups.find((g) => g.half === label)
+    if (existing) {
+      existing.items.push({ ...item, index: idx++ })
+    } else {
+      groups.push({ half: label, items: [{ ...item, index: idx++ }] })
+    }
+  }
+  return groups
+})
 
 let copyTimer: ReturnType<typeof setTimeout> | undefined
 let clearClosingTimer: ReturnType<typeof setTimeout> | undefined
@@ -308,6 +333,7 @@ async function copyLink() {
       v-if="activeRecord"
       class="detail-shell"
       :class="{ 'detail-shell--single': !activeRecord.images.length }"
+      :style="categoryStyle(activeRecord.type)"
     >
       <div v-if="activeImage" class="detail-ambient" aria-hidden="true">
         <Transition name="photo-bg">
@@ -413,6 +439,7 @@ async function copyLink() {
           <div :key="activeRecord.id" class="detail-body">
             <div class="detail-kicker">
               <span class="detail-type-pill">{{ activeRecord.type }}</span>
+              <span v-if="activeRecord.status === 'upcoming'" class="detail-upcoming-pill">待观看</span>
               <span v-if="navList.length > 1" class="detail-counter">
                 {{ String(navIndex + 1).padStart(2, '0') }} / {{ String(navList.length).padStart(2, '0') }}
               </span>
@@ -420,27 +447,57 @@ async function copyLink() {
 
             <header class="detail-header">
               <h1 id="record-title">{{ activeRecord.title }}</h1>
-              <p v-if="activeRecord.artist" class="detail-artist">{{ activeRecord.artist }}</p>
+              <p v-if="activeRecord.artist && !hasStructuredCredits" class="detail-artist">
+                {{ activeRecord.artist }}
+              </p>
             </header>
 
-            <div class="detail-meta">
-              <span><CalendarDays :size="13" />{{ dateLabel(activeRecord.date) }}</span>
-              <span>
-                <MapPin :size="13" />{{ activeRecord.city }}
-                <template v-if="activeRecord.venue"> · {{ activeRecord.venue }}</template>
-              </span>
-              <span
-                v-if="activeRecord.rating > 0"
-                class="rating"
-                :aria-label="`评分 ${activeRecord.rating} / 5`"
-              >
-                <Star
-                  v-for="star in 5"
-                  :key="star"
-                  :size="12"
-                  :class="{ filled: star <= activeRecord.rating }"
-                />
-              </span>
+            <div v-if="hasStructuredCredits" class="detail-credits">
+              <div v-if="activeRecord.orchestra" class="credit-item">
+                <span>乐团</span>
+                <strong>{{ activeRecord.orchestra }}</strong>
+              </div>
+              <div v-if="activeRecord.conductor" class="credit-item">
+                <span>指挥</span>
+                <strong>{{ activeRecord.conductor }}</strong>
+              </div>
+              <div v-if="activeRecord.soloists.length" class="credit-item credit-item--soloists">
+                <span>独奏</span>
+                <div class="soloist-chips">
+                  <em v-for="person in activeRecord.soloists" :key="person">{{ person }}</em>
+                </div>
+              </div>
+              <p v-if="activeRecord.artist" class="credit-subline">{{ activeRecord.artist }}</p>
+            </div>
+
+            <div class="detail-stub">
+              <div class="detail-meta">
+                <span><CalendarDays :size="13" />{{ dateLabel(activeRecord.date) }}</span>
+                <span>
+                  <MapPin :size="13" />{{ activeRecord.city }}
+                  <template v-if="activeRecord.venue"> · {{ activeRecord.venue }}</template>
+                </span>
+                <span
+                  v-if="activeRecord.rating > 0"
+                  class="rating"
+                  :aria-label="`评分 ${activeRecord.rating} / 5`"
+                >
+                  <Star
+                    v-for="star in 5"
+                    :key="star"
+                    :size="12"
+                    :class="{ filled: star <= activeRecord.rating }"
+                  />
+                </span>
+              </div>
+
+              <div v-if="activeRecord.seat || activeRecord.price" class="detail-ticket-row">
+                <Ticket :size="13" />
+                <span v-if="activeRecord.seat" class="ticket-chip">座位 {{ activeRecord.seat }}</span>
+                <span v-if="activeRecord.price" class="ticket-chip ticket-chip--price">
+                  {{ activeRecord.price }}
+                </span>
+              </div>
             </div>
 
             <p v-if="activeRecord.note" class="detail-note">{{ activeRecord.note }}</p>
@@ -457,14 +514,22 @@ async function copyLink() {
               </button>
             </div>
 
-            <section v-if="activeRecord.program.length" class="setlist-block">
+            <section v-if="groupedProgram.length" class="setlist-block">
               <h2>曲目单</h2>
-              <ol class="program">
-                <li v-for="(song, index) in activeRecord.program" :key="index">
-                  <span>{{ String(index + 1).padStart(2, '0') }}</span>
-                  {{ song }}
-                </li>
-              </ol>
+              <div class="setlist-groups">
+                <div v-for="group in groupedProgram" :key="group.half || 'default'" class="setlist-group">
+                  <span v-if="group.half" class="setlist-half-badge">{{ group.half }}</span>
+                  <ol class="program">
+                    <li v-for="item in group.items" :key="item.index">
+                      <span class="program-num">{{ String(item.index).padStart(2, '0') }}</span>
+                      <div class="program-main">
+                        <strong class="program-title">{{ item.title }}</strong>
+                        <span v-if="item.composer" class="program-composer">{{ item.composer }}</span>
+                      </div>
+                    </li>
+                  </ol>
+                </div>
+              </div>
             </section>
 
             <p v-if="copyError" class="demo-note" role="status">{{ copyError }}</p>

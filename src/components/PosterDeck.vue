@@ -2,7 +2,8 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Pause, Play, Star } from 'lucide-vue-next'
-import type { ConcertRecord } from '../lib/schema'
+import { formatCredits, type ConcertRecord } from '../lib/schema'
+import { categoryStyle } from '../lib/categories'
 import { imageUrl } from '../lib/store'
 import {
   canLoopDeck,
@@ -759,7 +760,10 @@ onUnmounted(() => {
           <strong>{{ record.title }}</strong>
         </div>
 
-        <span class="poster-pill">{{ record.type }}</span>
+        <span class="poster-pill" :style="categoryStyle(record.type)">
+          <i class="poster-pill-dot" aria-hidden="true" />{{ record.type }}
+        </span>
+        <span v-if="record.status === 'upcoming'" class="poster-upcoming-pill">待观看</span>
         <span class="poster-open-pill" aria-hidden="true">
           <ArrowUpRight :size="16" />
         </span>
@@ -770,6 +774,7 @@ onUnmounted(() => {
       <Transition name="caption-swap">
         <div :key="activeRecord.id" class="poster-caption">
           <div class="poster-caption-meta">
+            <span v-if="activeRecord.status === 'upcoming'" class="caption-upcoming-tag">待观看</span>
             <time :datetime="activeRecord.date">{{ activeRecord.date.replaceAll('-', '.') }}</time>
             <span class="meta-sep">·</span>
             <span><MapPin :size="13" />{{ activeRecord.city }}</span>
@@ -795,7 +800,7 @@ onUnmounted(() => {
           </button>
 
           <div class="poster-caption-sub">
-            <span v-if="activeRecord.artist">{{ activeRecord.artist }}</span>
+            <span v-if="formatCredits(activeRecord)">{{ formatCredits(activeRecord) }}</span>
             <span class="poster-counter">
               {{ String(activeIndex + 1).padStart(2, '0') }} /
               {{ String(records.length).padStart(2, '0') }}
