@@ -61,7 +61,7 @@ export function cardPose(rel: number, unit: number, intro = 1, maxAbs = 3.1): Ca
   const visible = abs <= maxAbs
   const outerRatio = maxAbs > 3.5 ? 0.72 : 0.58
   const spread = Math.min(abs, 1) * unit + Math.max(0, abs - 1) * unit * outerRatio
-  const fadeStart = Math.max(2.2, maxAbs - 1.2)
+  const fadeStart = maxAbs > 3.5 ? 3.4 : 2.2
   const edgeOpacity = abs <= fadeStart ? 1 : Math.max(0, 1 - (abs - fadeStart) / Math.max(0.4, maxAbs - fadeStart))
   const introOpacity = abs < 0.5 ? 1 : clamp(intro * intro, 0, 1)
 
@@ -72,7 +72,7 @@ export function cardPose(rel: number, unit: number, intro = 1, maxAbs = 3.1): Ca
     scale: Math.max(0.62, 1 - clamped * (maxAbs > 3.5 ? 0.082 : 0.13)) * (0.94 + 0.06 * intro),
     shade: Math.min(0.54, clamped * (maxAbs > 3.5 ? 0.1 : 0.16)),
     opacity: visible ? edgeOpacity * introOpacity : 0,
-    zIndex: Math.round(60 - clamped * 8),
+    zIndex: Math.round(1000 - clamped * 100),
     visible
   }
 }

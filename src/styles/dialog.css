@@ -16,22 +16,20 @@ dialog::backdrop {
   overflow: hidden;
   overscroll-behavior: contain;
   background-color: rgb(6 7 10 / 0);
-  backdrop-filter: blur(0px);
-  transition-property: background-color, backdrop-filter, display, overlay;
-  transition-duration: 0.36s;
+  backdrop-filter: blur(12px);
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.32s;
   transition-timing-function: ease-out;
   transition-behavior: allow-discrete;
 }
 
 dialog[open]:where(:not([data-closing]))::backdrop {
-  background-color: rgb(6 7 10 / 0.74);
-  backdrop-filter: blur(16px);
+  background-color: rgb(6 7 10 / 0.72);
 }
 
 @starting-style {
   dialog[open]:where(:not([data-closing]))::backdrop {
     background-color: rgb(6 7 10 / 0);
-    backdrop-filter: blur(0px);
   }
 }
 
@@ -124,9 +122,10 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: blur(84px) saturate(1.45);
-  opacity: 0.11;
-  transform: scale(1.2);
+  filter: blur(48px) saturate(1.35);
+  opacity: 0.12;
+  transform: scale(1.25) translateZ(0);
+  backface-visibility: hidden;
 }
 
 :root[data-theme='dark'] .detail-ambient img {
@@ -192,8 +191,9 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: blur(48px) saturate(1.5) brightness(0.56);
-  transform: scale(1.2);
+  filter: blur(44px) saturate(1.45) brightness(0.56);
+  transform: scale(1.22) translateZ(0);
+  backface-visibility: hidden;
   pointer-events: none;
 }
 
@@ -214,6 +214,9 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
   pointer-events: none;
 }
 
@@ -287,9 +290,8 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 .detail-next-enter-active,
 .detail-prev-enter-active {
   transition:
-    opacity 0.34s ease,
-    transform 0.48s var(--ease-out-expo),
-    filter 0.34s ease;
+    opacity 0.3s ease,
+    transform 0.42s var(--ease-out-expo);
 }
 .detail-next-leave-active,
 .detail-prev-leave-active {
@@ -299,21 +301,19 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 }
 .detail-next-enter-from {
   opacity: 0;
-  transform: translateY(10px);
-  filter: blur(4px);
+  transform: translate3d(0, 10px, 0);
 }
 .detail-next-leave-to {
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translate3d(0, -6px, 0);
 }
 .detail-prev-enter-from {
   opacity: 0;
-  transform: translateY(-10px);
-  filter: blur(4px);
+  transform: translate3d(0, -10px, 0);
 }
 .detail-prev-leave-to {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translate3d(0, 6px, 0);
 }
 
 @media (prefers-reduced-motion: reduce) {
