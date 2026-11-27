@@ -14,7 +14,11 @@ const router = createRouter({
     { path: '/about', redirect: '/' },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
-  scrollBehavior: (_to, _from, saved) => saved || { top: 0 }
+  scrollBehavior: (to, from, saved) => {
+    if (saved) return saved
+    if (to.path === from.path) return false
+    return { top: 0 }
+  }
 })
 
 createApp(App).use(router).mount('#app')

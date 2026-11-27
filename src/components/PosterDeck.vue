@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Pause, Play, Star } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, MapPin, Pause, Play, Star } from 'lucide-vue-next'
 import { formatCredits, type ConcertRecord } from '../lib/schema'
 import { categoryStyle } from '../lib/categories'
 import { imageUrl } from '../lib/store'
@@ -764,9 +764,6 @@ onUnmounted(() => {
           <i class="poster-pill-dot" aria-hidden="true" />{{ record.type }}
         </span>
         <span v-if="record.status === 'upcoming'" class="poster-upcoming-pill">待观看</span>
-        <span class="poster-open-pill" aria-hidden="true">
-          <ArrowUpRight :size="16" />
-        </span>
       </button>
     </div>
 
@@ -799,12 +796,8 @@ onUnmounted(() => {
             <h2>{{ activeRecord.title }}</h2>
           </button>
 
-          <div class="poster-caption-sub">
-            <span v-if="formatCredits(activeRecord)">{{ formatCredits(activeRecord) }}</span>
-            <span class="poster-counter">
-              {{ String(activeIndex + 1).padStart(2, '0') }} /
-              {{ String(records.length).padStart(2, '0') }}
-            </span>
+          <div v-if="formatCredits(activeRecord) || canLoop" class="poster-caption-sub">
+            <span v-if="formatCredits(activeRecord)" class="poster-credits">{{ formatCredits(activeRecord) }}</span>
             <button
               v-if="canLoop"
               type="button"

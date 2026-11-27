@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowUpRight,
   ChevronDown,
   Disc3,
   GalleryHorizontalEnd,
@@ -15,7 +14,7 @@ import {
   X
 } from 'lucide-vue-next'
 import { archive, visibleRecords, imageUrl } from '../lib/store'
-import { defaultEventTypes, formatCredits, type ConcertRecord } from '../lib/schema'
+import { defaultEventTypes, formatCredits, formatPriceLabel, type ConcertRecord } from '../lib/schema'
 import { categoryStyle } from '../lib/categories'
 import { filterRecords, hasFilters, readFilters } from '../lib/filters'
 import { runViewTransition } from '../lib/motion'
@@ -42,21 +41,16 @@ onMounted(() => {
   hudReady.value = true
 })
 
-async function updateQuery(next: Record<string, unknown>, animate: boolean) {
-  const apply = async () => {
-    await router.replace({ query: next as typeof route.query })
-    await nextTick()
-  }
-  if (animate && mode.value === 'timeline') await runViewTransition(apply)
-  else await apply()
+async function updateQuery(next: Record<string, unknown>) {
+  await router.replace({ query: next as typeof route.query })
 }
 
 async function applyFilter(key: string, value: string) {
-  await updateQuery({ ...route.query, [key]: value || undefined }, key !== 'q')
+  await updateQuery({ ...route.query, [key]: value || undefined })
 }
 
 async function resetFilters() {
-  await updateQuery(route.query.record ? { record: route.query.record } : {}, true)
+  await updateQuery(route.query.record ? { record: route.query.record } : {})
 }
 
 async function switchMode(nextMode: 'deck' | 'timeline') {
@@ -269,7 +263,7 @@ const timelineGroups = computed(() => {
             :to="{ path: '/', query: { ...route.query, record: record.id } }"
             class="timeline-record"
             :class="{ 'is-upcoming': record.status === 'upcoming' }"
-            :style="{ ...categoryStyle(record.type), viewTransitionName: `record-${record.id}` }"
+            :style="categoryStyle(record.type)"
           >
             <time :datetime="record.date">{{ record.date.slice(5).replace('-', '.') }}</time>
             <div class="timeline-thumb">
@@ -304,7 +298,7 @@ const timelineGroups = computed(() => {
                   }}<template v-if="record.venue"> · {{ record.venue }}</template>
                 </span>
                 <span v-if="record.seat || record.price" class="timeline-ticket">
-                  <Ticket :size="11" />{{ [record.seat, record.price].filter(Boolean).join(' · ') }}
+                  <Ticket :size="11" />{{ [record.seat, formatPriceLabel(record.price)].filter(Boolean).join(' · ') }}
                 </span>
               </p>
             </div>

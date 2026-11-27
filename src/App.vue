@@ -7,12 +7,9 @@ import {
   Moon,
   Monitor,
   ArrowUpRight,
-  Home as HomeIcon,
-  Disc3,
-  X
+  Home as HomeIcon
 } from 'lucide-vue-next'
-import { archive, dirty, loadArchive, loadError, visibleRecords } from './lib/store'
-import { closeTopLayer, setupDialogLightDismiss } from './lib/motion'
+import { archive, dirty, loadArchive, loadError } from './lib/store'
 import RecordDialog from './components/RecordDialog.vue'
 
 const themes = ['system', 'light', 'dark'] as const
@@ -137,22 +134,6 @@ function onGlobalKeydown(event: KeyboardEvent) {
   }
 }
 
-// About modal
-const aboutDialog = ref<HTMLDialogElement>()
-let cleanupAboutDismiss: (() => void) | undefined
-const firstYear = computed(
-  () => visibleRecords.value.at(-1)?.date.slice(0, 4) || new Date().getFullYear()
-)
-
-function openAbout() {
-  aboutDialog.value?.removeAttribute('data-closing')
-  aboutDialog.value?.showModal()
-}
-
-async function closeAbout() {
-  await closeTopLayer(aboutDialog.value)
-}
-
 function applyTheme() {
   const resolved = theme.value === 'system' ? (media.matches ? 'dark' : 'light') : theme.value
   document.documentElement.dataset.theme = resolved
@@ -209,9 +190,6 @@ onMounted(() => {
   window.addEventListener('keydown', onGlobalKeydown)
   handleScroll()
   loadArchive()
-  if (aboutDialog.value) {
-    cleanupAboutDismiss = setupDialogLightDismiss(aboutDialog.value, () => {})
-  }
 })
 
 onUnmounted(() => {
@@ -220,7 +198,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
   resetBrandGesture()
   clearTimeout(brandClickTimer)
-  cleanupAboutDismiss?.()
 })
 </script>
 
@@ -258,17 +235,6 @@ onUnmounted(() => {
 
     <div class="floating-actions">
       <div id="hud-slot" class="hud-slot" />
-
-      <button
-        v-if="archive"
-        type="button"
-        class="icon-button hud-icon-btn"
-        aria-label="关于这本档案"
-        title="关于"
-        @click="openAbout"
-      >
-        <Disc3 :size="15" />
-      </button>
 
       <button
         type="button"
@@ -314,34 +280,6 @@ onUnmounted(() => {
       <AudioLines :size="32" />
     </div>
   </main>
-
-  <dialog
-    ref="aboutDialog"
-    closedby="any"
-    class="about-dialog"
-    aria-labelledby="about-dialog-title"
-  >
-    <button
-      type="button"
-      class="icon-button about-dialog-close"
-      aria-label="关闭档案介绍"
-      autofocus
-      @click="closeAbout"
-    >
-      <X :size="18" />
-    </button>
-    <div v-if="archive" class="about-dialog-head">
-      <div class="mini-vinyl" aria-hidden="true">
-        <span><AudioLines :size="13" /></span>
-      </div>
-      <div>
-        <h1 id="about-dialog-title">{{ archive.settings.name }} {{ archive.settings.englishName }}</h1>
-        <p class="about-owner">{{ archive.settings.owner }} · {{ firstYear }}</p>
-      </div>
-    </div>
-    <p v-if="archive?.settings.tagline" class="about-tagline">{{ archive.settings.tagline }}</p>
-    <p v-if="archive" class="about-bio">{{ archive.settings.bio }}</p>
-  </dialog>
 
   <RecordDialog />
 </template>

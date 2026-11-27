@@ -263,36 +263,9 @@
   width: 100%;
 }
 
-/* ---------- View Transitions API for Cards ---------- */
+/* ---------- View Transitions API for Mode Switch ---------- */
 ::view-transition {
   pointer-events: none;
-}
-
-::view-transition-group(.concert-card) {
-  animation-duration: 0.42s;
-  animation-timing-function: var(--ease-out-expo);
-}
-
-::view-transition-new(.concert-card):only-child {
-  animation: vt-card-in 0.36s var(--ease-out-expo) both;
-}
-
-::view-transition-old(.concert-card):only-child {
-  animation: vt-card-out 0.24s ease-in both;
-}
-
-@keyframes vt-card-in {
-  from {
-    opacity: 0;
-    transform: scale(0.94) translateY(10px);
-  }
-}
-
-@keyframes vt-card-out {
-  to {
-    opacity: 0;
-    transform: scale(0.94);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -365,7 +338,6 @@
 }
 
 .timeline-record {
-  view-transition-class: concert-card;
   position: relative;
   display: grid;
   grid-template-columns: 56px 66px minmax(0, 1fr);
@@ -376,10 +348,8 @@
   background: transparent;
   border: 1px solid transparent;
   transition:
-    transform 0.36s var(--ease-out-expo),
-    background-color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.36s var(--ease-out-expo);
+    background-color 0.16s ease,
+    border-color 0.16s ease;
 }
 
 .timeline-record:not(:last-child)::after {
@@ -390,7 +360,7 @@
   bottom: -3px;
   height: 1px;
   background: var(--line);
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 .timeline-record:hover::after {
@@ -409,22 +379,18 @@
   border: 2px solid var(--line-strong);
   transform: translateY(-50%);
   transition:
-    background-color 0.25s ease,
-    border-color 0.25s ease,
-    transform 0.3s var(--ease-out-expo);
+    background-color 0.16s ease,
+    border-color 0.16s ease;
 }
 
 .timeline-record:hover {
-  transform: translateX(4px);
   background: var(--surface);
   border-color: var(--line);
-  box-shadow: var(--shadow-sm);
 }
 
 .timeline-record:hover::before {
   background: var(--cat-color, var(--accent));
   border-color: var(--cat-color, var(--accent));
-  transform: translateY(-50%) scale(1.25);
 }
 
 .timeline-record.is-upcoming::before {
@@ -453,7 +419,6 @@
 .timeline-thumb img {
   width: 100%;
   height: 100%;
-  transition: transform 0.55s var(--ease-out-expo);
 }
 
 .timeline-thumb .no-photo {
@@ -465,10 +430,6 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   color: var(--muted);
-}
-
-.timeline-record:hover .timeline-thumb img {
-  transform: scale(1.07);
 }
 
 .timeline-info {
