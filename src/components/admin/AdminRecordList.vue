@@ -38,16 +38,19 @@ const filteredRecords = computed(() => {
       <h2>观演记录</h2>
       <p>共 {{ records.length }} 条 · {{ publishedCount }} 条公开</p>
     </div>
-    <button type="button" class="button small" @click="emit('create')">
-      <Plus :size="16" />新增记录
-    </button>
-  </div>
-
-  <div v-if="demoCount" class="demo-admin-banner">
-    <span>包含 {{ demoCount }} 条示例记录</span>
-    <button type="button" class="banner-link" @click="emit('clearDemo')">
-      清空示例 <Trash2 :size="13" />
-    </button>
+    <div class="panel-heading-actions">
+      <button
+        v-if="demoCount"
+        type="button"
+        class="button secondary small"
+        @click="emit('clearDemo')"
+      >
+        <Trash2 :size="14" />清空示例 ({{ demoCount }})
+      </button>
+      <button type="button" class="button small" @click="emit('create')">
+        <Plus :size="16" />新增记录
+      </button>
+    </div>
   </div>
 
   <div v-if="records.length > 3" class="admin-list-toolbar">

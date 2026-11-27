@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import {
   AlertCircle,
@@ -10,7 +10,8 @@ import {
   Download,
   RotateCcw,
   Settings2,
-  Upload
+  Upload,
+  X
 } from 'lucide-vue-next'
 import {
   archive,
@@ -26,6 +27,7 @@ import {
 import { archiveSchema, emptyRecord, type Archive, type ConcertRecord } from '../lib/schema'
 import { GithubArchive, type GithubConfig } from '../lib/github'
 import { draftTransaction } from '../lib/drafts'
+import { closeTopLayer, setupDialogLightDismiss } from '../lib/motion'
 import AdminRecordList from '../components/admin/AdminRecordList.vue'
 import AdminRecordForm from '../components/admin/AdminRecordForm.vue'
 import AdminSettingsForm from '../components/admin/AdminSettingsForm.vue'
@@ -48,11 +50,13 @@ const config = ref<GithubConfig>({
   branch: import.meta.env.VITE_GITHUB_BRANCH || 'main'
 })
 const commitUrl = ref('')
-const hasRecoverableDraft = ref(false)
 const local = import.meta.env.DEV
 let client: GithubArchive | null = null
+let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 const confirmDialog = ref<HTMLDialogElement>()
+const draftDialog = ref<HTMLDialogElement>()
+let cleanupDraftDismiss: (() => void) | undefined
 const confirmTitle = ref('')
 const confirmText = ref('')
 let answer: ((value: boolean) => void) | null = null
@@ -78,10 +82,20 @@ function finishConfirm() {
 }
 
 function clearStatus() {
+  clearTimeout(toastTimer)
   error.value = ''
   message.value = ''
   commitUrl.value = ''
 }
+
+watch(message, (val) => {
+  clearTimeout(toastTimer)
+  if (!val) return
+  toastTimer = setTimeout(() => {
+    message.value = ''
+    commitUrl.value = ''
+  }, commitUrl.value ? 6500 : 4200)
+})
 
 async function changeTab(next: typeof tab.value) {
   if (busy.value) return
@@ -114,7 +128,6 @@ async function saveRecord(record: ConcertRecord) {
   if (index === -1) next.records.push(record)
   else next.records[index] = record
   await stage(next)
-  hasRecoverableDraft.value = false
   editing.value = null
   message.value = '记录已暂存到草稿。'
 }
@@ -126,7 +139,6 @@ async function toggleRecordField(record: ConcertRecord, field: 'published' | 'fe
   if (!target) return
   target[field] = !target[field]
   await stage(next)
-  hasRecoverableDraft.value = false
   message.value =
     field === 'published'
       ? target.published
@@ -142,7 +154,6 @@ async function deleteRecord(record: ConcertRecord) {
   const next: Archive = JSON.parse(JSON.stringify(archive.value))
   next.records = next.records.filter((item) => item.id !== record.id)
   await stage(next)
-  hasRecoverableDraft.value = false
   message.value = '已从草稿移除。'
 }
 
@@ -152,7 +163,6 @@ async function clearDemo() {
   const next: Archive = JSON.parse(JSON.stringify(archive.value))
   next.records = next.records.filter((record) => !record.demo)
   await stage(next)
-  hasRecoverableDraft.value = false
   message.value = '已清空示例记录。'
 }
 
@@ -160,7 +170,6 @@ async function saveSettings(nextSettings: Archive['settings']) {
   clearStatus()
   const next = archiveSchema.parse({ ...archive.value, settings: nextSettings })
   await stage(next)
-  hasRecoverableDraft.value = false
   message.value = '站点设置已暂存到草稿。'
 }
 
@@ -206,7 +215,6 @@ async function syncRemote() {
     const remote = await client.connect()
     replaceBaseline(remote)
     await draftTransaction('delete').catch(() => {})
-    hasRecoverableDraft.value = false
     message.value = '已从 GitHub 同步最新内容。'
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '同步失败'
@@ -304,7 +312,6 @@ async function importBackup(event: Event) {
       throw new Error('备份图片数据无效')
     pendingAssets.value = assets
     await stage(next)
-    hasRecoverableDraft.value = false
     message.value = '已导入备份到草稿。'
   } catch (caught) {
     error.value =
@@ -324,7 +331,7 @@ async function restore() {
     if (dirty.value && !(await warn('恢复浏览器草稿？', '当前草稿将被上次保存的浏览器草稿替换。')))
       return
     const result = await restoreDraft()
-    hasRecoverableDraft.value = false
+    await closeTopLayer(draftDialog.value)
     message.value = result ? '已恢复浏览器草稿。' : '没有可恢复的草稿。'
   } catch (caught) {
     error.value = caught instanceof Error ? caught.message : '恢复失败'
@@ -333,13 +340,12 @@ async function restore() {
 
 async function dismissRecoverableDraft() {
   await draftTransaction('delete').catch(() => {})
-  hasRecoverableDraft.value = false
+  await closeTopLayer(draftDialog.value)
 }
 
 async function discard() {
   if (!(await warn('放弃全部未发布改动？', '将恢复为上次发布或读取时的内容。'))) return
   await discardDraft()
-  hasRecoverableDraft.value = false
   message.value = '已恢复到上次保存的版本。'
 }
 
@@ -360,14 +366,20 @@ onMounted(async () => {
     if (saved?.owner && saved?.repo && saved?.branch) config.value = saved
   } catch {}
   window.addEventListener('beforeunload', beforeUnload)
+  if (draftDialog.value) {
+    cleanupDraftDismiss = setupDialogLightDismiss(draftDialog.value, () => {})
+  }
   try {
     if (!dirty.value && (await draftTransaction('read'))) {
-      hasRecoverableDraft.value = true
+      draftDialog.value?.removeAttribute('data-closing')
+      draftDialog.value?.showModal()
     }
   } catch {}
 })
 
 onUnmounted(() => {
+  clearTimeout(toastTimer)
+  cleanupDraftDismiss?.()
   window.removeEventListener('beforeunload', beforeUnload)
   disconnect()
 })
@@ -409,47 +421,6 @@ onUnmounted(() => {
       </aside>
 
       <div class="admin-content">
-        <div v-if="hasRecoverableDraft" class="draft-recover-banner" role="status">
-          <span>检测到上次未发布的浏览器草稿</span>
-          <div class="banner-actions">
-            <button type="button" class="banner-link" @click="restore">恢复草稿</button>
-            <button type="button" class="banner-link muted-action" @click="dismissRecoverableDraft">
-              忽略
-            </button>
-          </div>
-        </div>
-
-        <div v-if="message" class="notice success" role="status">
-          <div class="notice-main">
-            <Check :size="16" />
-            <span>{{ message }}</span>
-          </div>
-          <a
-            v-if="commitUrl"
-            :href="commitUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="notice-action"
-          >
-            查看提交 <ArrowUpRight :size="13" />
-          </a>
-          <button
-            v-else-if="dirty && tab !== 'publish'"
-            type="button"
-            class="notice-action"
-            @click="changeTab('publish')"
-          >
-            去发布 <ArrowUpRight :size="13" />
-          </button>
-        </div>
-
-        <div v-if="error" class="notice error" role="alert">
-          <div class="notice-main">
-            <AlertCircle :size="16" />
-            <span>{{ error }}</span>
-          </div>
-        </div>
-
         <AdminRecordList
           v-if="tab === 'records' && !editing"
           :records="sorted"
@@ -502,6 +473,74 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <div class="admin-toast-stack" aria-live="polite">
+    <Transition name="toast-pop">
+      <div v-if="message" key="toast-success" class="admin-toast success" role="status">
+        <Check :size="15" />
+        <span>{{ message }}</span>
+        <a
+          v-if="commitUrl"
+          :href="commitUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="toast-action"
+        >
+          查看提交 <ArrowUpRight :size="13" />
+        </a>
+        <button
+          v-else-if="dirty && tab !== 'publish'"
+          type="button"
+          class="toast-action"
+          @click="changeTab('publish')"
+        >
+          去发布 <ArrowUpRight :size="13" />
+        </button>
+        <button
+          type="button"
+          class="toast-close"
+          aria-label="关闭提示"
+          @click="clearStatus"
+        >
+          <X :size="14" />
+        </button>
+      </div>
+    </Transition>
+
+    <Transition name="toast-pop">
+      <div v-if="error" key="toast-error" class="admin-toast error" role="alert">
+        <AlertCircle :size="15" />
+        <span>{{ error }}</span>
+        <button
+          type="button"
+          class="toast-close"
+          aria-label="关闭错误提示"
+          @click="error = ''"
+        >
+          <X :size="14" />
+        </button>
+      </div>
+    </Transition>
+  </div>
+
+  <dialog
+    ref="draftDialog"
+    closedby="any"
+    class="confirm-dialog"
+    aria-labelledby="draft-dialog-title"
+    aria-describedby="draft-dialog-desc"
+  >
+    <h1 id="draft-dialog-title">检测到未发布的浏览器草稿</h1>
+    <p id="draft-dialog-desc">是否恢复上次暂存在浏览器中的改动？选择“忽略”将清除该草稿。</p>
+    <form method="dialog" @submit.prevent>
+      <button type="button" class="button secondary small" @click="dismissRecoverableDraft">
+        忽略
+      </button>
+      <button type="button" class="button small" autofocus @click="restore">
+        恢复草稿
+      </button>
+    </form>
+  </dialog>
 
   <dialog
     ref="confirmDialog"
