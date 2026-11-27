@@ -293,6 +293,8 @@
 
 /* ---------- Timeline View ---------- */
 .timeline {
+  width: min(820px, 100%);
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: 44px;
@@ -301,8 +303,8 @@
 
 .timeline-year {
   display: grid;
-  grid-template-columns: 128px minmax(0, 1fr);
-  gap: 28px;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
 }
 
@@ -341,9 +343,9 @@
   view-transition-class: concert-card;
   position: relative;
   display: grid;
-  grid-template-columns: 58px 66px minmax(0, 1fr) auto;
+  grid-template-columns: 56px 66px minmax(0, 1fr);
   align-items: center;
-  gap: 20px;
+  gap: 18px;
   padding: 14px 18px;
   border-radius: var(--radius-md);
   background: transparent;
@@ -522,35 +524,6 @@
   text-overflow: ellipsis;
 }
 
-.timeline-arrow-wrap {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--muted);
-  border: 1px solid transparent;
-  transition:
-    background-color 0.25s ease,
-    border-color 0.25s ease,
-    color 0.25s ease,
-    transform 0.35s var(--ease-out-expo);
-}
-
-.timeline-arrow {
-  transition: transform 0.35s var(--ease-out-expo);
-}
-
-.timeline-record:hover .timeline-arrow-wrap {
-  background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
-  color: var(--accent);
-}
-
-.timeline-record:hover .timeline-arrow {
-  transform: translate(2px, -2px);
-}
-
 /* ---------- Empty & Loading States ---------- */
 .empty-state {
   text-align: center;
@@ -607,7 +580,7 @@
     padding-left: 18px;
   }
   .timeline-record {
-    grid-template-columns: 52px minmax(0, 1fr) auto;
+    grid-template-columns: 52px minmax(0, 1fr);
     gap: 14px;
     padding: 12px 10px;
   }

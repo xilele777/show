@@ -261,9 +261,6 @@ const timelineGroups = computed(() => {
                 </span>
               </p>
             </div>
-            <span class="timeline-arrow-wrap" aria-hidden="true">
-              <ArrowUpRight :size="16" class="timeline-arrow" />
-            </span>
           </RouterLink>
         </div>
       </section>
