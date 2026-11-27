@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://xilele777.github.io",
+          "http://127.0.0.1:3001",
+          "http://localhost:3001",
+          "http://127.0.0.1:4173",
+          "http://localhost:4173"
+        ],
+        "methods": ["GET", "HEAD", "PUT"],
+        "headers": ["Content-Type", "Authorization", "x-amz-content-sha256", "x-amz-date"]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

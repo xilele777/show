@@ -45,6 +45,25 @@ GitHub Pages 是静态托管，写入由管理页面连接 GitHub REST API 完�
 
 图片会转为 WebP（不支持编码时退回 PNG），最长边 2000px，压缩后单张最多 5 MB。导出的备份包含记录和尚未提交的图片；已发布图片需从仓库克隆或下载完整备份。
 
+## Cloudflare R2 图片上传
+
+已创建 R2 存储桶 `concshow-media`，并部署上传 Worker：
+
+https://concshow-images.2519175810.workers.dev
+
+管理页 → “发布与同步” → Cloudflare R2，默认选择 Worker 上传网关，公开访问地址和上传地址已经预填。将本机 `.cloudflare/upload-secrets.json` 中的 `UPLOAD_TOKEN` 填入“Worker 上传密钥 (Bearer)”后保存配置，再添加照片即可直传 R2。密钥仅保留在当前页面内存，刷新或离开管理页后需要重新填写；基础地址会保留。未填写密钥时，图片仍走原有的本地/仓库保存方式。
+
+图片公开读取，上传要求密钥；Worker 只接受 `uploads/` 下的 WebP、PNG、JPG 图片，最大 5 MB。已允许 GitHub Pages 来源 `https://xilele777.github.io` 和本机开发/预览端口 3001、4173 的跨域请求。新增网站域名时需同步更新 `cloudflare/wrangler.jsonc` 和 `cloudflare/cors.json`。通过 Worker 读取图片，无需开启 R2 的 `r2.dev` 公开访问。
+
+Worker 配置与源代码在 `cloudflare/`，公开地址配置在 `src/lib/r2-public.json`。上传密钥文件和 Wrangler 工作目录已被 Git 忽略，不能将密钥放入 `VITE_*` 环境变量或公开配置。更新 Cloudflare 配置：
+
+```powershell
+npx.cmd wrangler@4 r2 bucket cors set concshow-media --file cloudflare/cors.json --force
+npx.cmd wrangler@4 deploy --config cloudflare/wrangler.jsonc --secrets-file .cloudflare/upload-secrets.json
+```
+
+当前项目中的一张图片已上传并验证，内容文件已经使用 Cloudflare 图片链接。以后如需迁移本地记录中的图片，可以运行 `node --use-env-proxy cloudflare/upload-local.mjs`；成功校验后更新记录引用，迁移前的内容保存在 `.concshow-backups/archive.before-r2.json`。网页内容仍通过 GitHub 发布，R2 仅存放图片。
+
 “公开展示”只控制页面是否显示记录，**不构成访问权限控制**：内容 JSON 和图片仍在静态站点/仓库里。不公开的记录应另外保存在私人笔记中。默认示例记录和图片不是真实观演经历，管理页可一键移除示例。
 
 ## 检查

@@ -7,3 +7,6 @@ show-tracker/
 playwright-output/
 *.log
 .concshow-backups/
+.wrangler/
+.cloudflare/
+.dev.vars*

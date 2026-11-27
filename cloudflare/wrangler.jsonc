@@ -1,0 +1,13 @@
+{
+  "name": "concshow-images",
+  "main": "worker.mjs",
+  "account_id": "4386b7f5f88b93bd4baea4481882bd83",
+  "compatibility_date": "2026-11-27",
+  "workers_dev": true,
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "concshow-media" }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://xilele777.github.io,http://127.0.0.1:3001,http://localhost:3001,http://127.0.0.1:4173,http://localhost:4173"
+  }
+}

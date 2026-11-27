@@ -1,0 +1,7 @@
+{
+  "mode": "worker",
+  "accountId": "4386b7f5f88b93bd4baea4481882bd83",
+  "bucket": "concshow-media",
+  "publicUrl": "https://concshow-images.2519175810.workers.dev",
+  "workerUrl": "https://concshow-images.2519175810.workers.dev"
+}
