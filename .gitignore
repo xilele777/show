@@ -5,6 +5,7 @@ dist/
 !.env.example
 show-tracker/
 playwright-output/
+.playwright-mcp/
 *.log
 .concshow-backups/
 .concshow-mcp/
