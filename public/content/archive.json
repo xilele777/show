@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "settings": {
+    "name": "余响",
+    "englishName": "AFTERGLOW",
+    "owner": "一个热爱现场的人",
+    "tagline": "把现场，留在生活里。",
+    "bio": "喜欢乐团调音时的片刻嘈杂，也喜欢散场后独自走回家的路。\n\n这里是我的观演档案。收集一些声音、光线与当时的心情，让那些已经结束的夜晚，有一个可以再回来的地方。\n\n当前展示的是演示记录。等到真正的故事被写进来，这里会慢慢变成我的样子。"
+  },
+  "records": [
+    {
+      "id": "summer-night",
+      "title": "在夏夜里，听见一整片星空",
+      "artist": "夏日现场 · 户外音乐节",
+      "date": "2025-08-16",
+      "city": "杭州",
+      "venue": "城市草坪音乐现场",
+      "type": "音乐节",
+      "rating": 5,
+      "note": "天色一点点暗下来，舞台的灯却越来越亮。我们在人群里跟着节拍摇晃，似乎谁都不需要说什么。\n\n最喜欢的那首歌响起时，很多人一起举起了手。那个瞬间，日常里琐碎的烦恼，真的可以被一阵声音带走。\n\n散场以后，耳边还留着最后一段旋律。夏天好像因此被延长了一点。\n\n这是用于展示版式的示例文字，并非真实观演经历；照片为 Unsplash 氛围示意。",
+      "tags": [
+        "夏日",
+        "户外",
+        "值得重听"
+      ],
+      "program": [
+        "开场 · 夏日序曲",
+        "黄昏时分",
+        "安可 · 留住这个夜晚"
+      ],
+      "images": [
+        "photos/main.jpg",
+        "photos/festival.jpg",
+        "photos/stage.jpg"
+      ],
+      "featured": true,
+      "published": true,
+      "demo": true
+    },
+    {
+      "id": "tchaikovsky-five",
+      "title": "柴可夫斯基第五交响曲",
+      "artist": "交响乐团 · 交响之夜",
+      "date": "2025-06-21",
+      "city": "上海",
+      "venue": "城市音乐厅",
+      "type": "音乐会",
+      "rating": 5,
+      "note": "圆号的旋律一出来，整个大厅就安静了。现场的声音不是耳机里放大的细节，而是一种可以被身体感受到的呼吸。\n\n第二乐章让我忘记了时间。离开音乐厅时，路灯和人群都像慢了下来。\n\n此记录、场地和文字为界面示例，图片为氛围示意。",
+      "tags": [
+        "交响乐",
+        "柴可夫斯基"
+      ],
+      "program": [
+        "柴可夫斯基 · E 小调第五交响曲，作品 64",
+        "安可 · 弦乐小品"
+      ],
+      "images": [
+        "photos/orchestra.jpg",
+        "photos/stage.jpg"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": true
+    },
+    {
+      "id": "small-room",
+      "title": "离音乐只有几步的距离",
+      "artist": "独立乐队 · 小场地特别现场",
+      "date": "2025-04-12",
+      "city": "南京",
+      "venue": "街角 Livehouse",
+      "type": "Livehouse",
+      "rating": 4,
+      "note": "喜欢小场地里那些不完美的细节：吉他弦的杂音、主唱唱到一半忍不住笑、观众不太整齐的合唱。\n\n这里没有很远的舞台，只有几步的距离，和一群喜欢同样旋律的人。\n\n此条为演示记录，不代表真实演出。",
+      "tags": [
+        "独立音乐",
+        "小而美"
+      ],
+      "program": [
+        "第一首歌",
+        "城市的夜晚",
+        "安可 · 再唱一遍"
+      ],
+      "images": [
+        "photos/live.jpg",
+        "photos/main.jpg"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": true
+    },
+    {
+      "id": "piano-evening",
+      "title": "一个属于钢琴的夜晚",
+      "artist": "钢琴独奏 · 浪漫主义作品选",
+      "date": "2025-02-23",
+      "city": "杭州",
+      "venue": "城市艺术中心",
+      "type": "音乐会",
+      "rating": 5,
+      "note": "舞台上只有一架钢琴。每一个音被弹出来以后，都在大厅里慢慢消失。\n\n回家的时候没有再放音乐，想把那一点余韵留得更久些。\n\n此条为演示记录，图片为音乐氛围示意。",
+      "tags": [
+        "钢琴",
+        "肖邦",
+        "独奏"
+      ],
+      "program": [
+        "肖邦 · 降 E 大调夜曲，作品 9 之 2",
+        "舒曼 · 梦幻曲",
+        "李斯特 · 爱之梦第三首"
+      ],
+      "images": [
+        "photos/orchestra.jpg"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": true
+    },
+    {
+      "id": "city-concert",
+      "title": "万人合唱的那个瞬间",
+      "artist": "流行现场 · 城市巡演",
+      "date": "2024-11-09",
+      "city": "上海",
+      "venue": "城市体育馆",
+      "type": "演唱会",
+      "rating": 4,
+      "note": "那些听了很多年的歌，终于从耳机里走到了眼前。合唱的时候，身边都是陌生人，但感觉并不陌生。\n\n这是演示内容，等待被真实的回忆替换。",
+      "tags": [
+        "合唱",
+        "老歌",
+        "巡演"
+      ],
+      "program": [
+        "开场曲",
+        "青春回忆",
+        "最后的合唱"
+      ],
+      "images": [
+        "photos/stage.jpg",
+        "photos/main.jpg"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": true
+    },
+    {
+      "id": "autumn-festival",
+      "title": "秋天的风，也在跟着唱",
+      "artist": "秋日音乐节 · 草坪舞台",
+      "date": "2024-10-03",
+      "city": "苏州",
+      "venue": "湖畔公园",
+      "type": "音乐节",
+      "rating": 4,
+      "note": "坐在草地上听完了整个下午。阳光刚刚好，风也刚刚好。\n\n原来一场现场，也可以不需要很多热闹，只要一个舒服的位置。\n\n此条为界面示例，图片为氛围示意。",
+      "tags": [
+        "秋日",
+        "户外",
+        "慢下来"
+      ],
+      "program": [],
+      "images": [
+        "photos/festival.jpg"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": true
+    }
+  ]
+}
