@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import siteArchive from '../public/content/archive.json'
 import { archiveSchema, recordSchema } from '../src/lib/schema'
 import { GithubArchive } from '../src/lib/github'
+import { r2PublicImageUrl, signR2PutHeaders } from '../src/lib/r2'
 import { archiveFixture } from './fixtures/archive'
 
 const data = archiveSchema.parse(archiveFixture)
@@ -156,5 +157,24 @@ describe('GitHub publishing', () => {
     )
     await connection.publish(next(), [{ path: 'uploads/cancelled.webp', base64: 'YWJj' }])
     expect(calls.filter((call) => call.path === '/git/blobs')).toHaveLength(1)
+  })
+})
+
+describe('Cloudflare R2 signing', () => {
+  it('signs SigV4 PUT requests and builds clean public R2 URLs', async () => {
+    const signed = await signR2PutHeaders({
+      accountId: '0123456789abcdef0123456789abcdef',
+      bucket: 'concshow-media',
+      key: 'uploads/test.webp',
+      contentType: 'image/webp',
+      payload: new Uint8Array([1, 2, 3]),
+      accessKeyId: 'test-key',
+      secretAccessKey: 'test-secret',
+      now: new Date('2026-11-27T05:00:00Z')
+    })
+    expect(signed.url).toBe('https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/concshow-media/uploads/test.webp')
+    expect(signed.headers['x-amz-date']).toBe('20261127T050000Z')
+    expect(signed.headers.Authorization).toContain('AWS4-HMAC-SHA256 Credential=test-key/20261127/auto/s3/aws4_request')
+    expect(r2PublicImageUrl('https://img.example.com/', '/uploads/test.webp')).toBe('https://img.example.com/uploads/test.webp')
   })
 })
