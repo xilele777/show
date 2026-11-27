@@ -113,6 +113,11 @@ watch(
   { immediate: true }
 )
 
+function resetScroll() {
+  contentEl.value?.scrollTo({ top: 0 })
+  dialog.value?.scrollTo({ top: 0 })
+}
+
 watch(
   record,
   async (value, oldValue) => {
@@ -128,8 +133,7 @@ watch(
       if (count) preloadImages(value.images)
       await nextTick()
       if (oldValue && value.id !== oldValue.id) {
-        contentEl.value?.scrollTo({ top: 0 })
-        dialog.value?.scrollTo({ top: 0 })
+        resetScroll()
       }
       if (dialog.value && !dialog.value.open) {
         dialog.value.removeAttribute('data-closing')
@@ -315,6 +319,29 @@ async function copyLink() {
     @close="handleNativeClose"
     @keydown="onDialogKeydown"
   >
+    <div v-if="activeRecord" class="dialog-floating-actions">
+      <button
+        type="button"
+        class="icon-button dialog-action-btn"
+        :class="{ copied }"
+        :aria-label="copied ? '已复制分享链接' : '复制分享链接'"
+        :title="copied ? '已复制链接' : '复制链接'"
+        @click="copyLink"
+      >
+        <Check v-if="copied" :size="15" />
+        <Copy v-else :size="15" />
+      </button>
+      <button
+        type="button"
+        class="icon-button dialog-action-btn"
+        aria-label="关闭"
+        autofocus
+        @click="requestClose"
+      >
+        <X :size="18" />
+      </button>
+    </div>
+
     <div
       v-if="activeRecord"
       class="detail-shell"
@@ -325,29 +352,6 @@ async function copyLink() {
         <Transition name="photo-bg">
           <img :key="activeImage" :src="imageUrl(activeImage)" alt="" decoding="async" />
         </Transition>
-      </div>
-
-      <div class="dialog-floating-actions">
-        <button
-          type="button"
-          class="icon-button dialog-action-btn"
-          :class="{ copied }"
-          :aria-label="copied ? '已复制分享链接' : '复制分享链接'"
-          :title="copied ? '已复制链接' : '复制链接'"
-          @click="copyLink"
-        >
-          <Check v-if="copied" :size="15" />
-          <Copy v-else :size="15" />
-        </button>
-        <button
-          type="button"
-          class="icon-button dialog-action-btn"
-          aria-label="关闭"
-          autofocus
-          @click="requestClose"
-        >
-          <X :size="18" />
-        </button>
       </div>
 
       <div
@@ -411,7 +415,7 @@ async function copyLink() {
       </div>
 
       <div ref="contentEl" class="detail-content">
-        <Transition :name="recordTransition" mode="out-in">
+        <Transition :name="recordTransition" mode="out-in" @enter="resetScroll">
           <div :key="activeRecord.id" class="detail-body">
             <div class="detail-kicker">
               <span class="detail-type-label">
