@@ -363,6 +363,7 @@
 .glide-toggle {
   width: 24px;
   height: 24px;
+  padding: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -426,6 +427,7 @@
   flex: none;
   width: 6px;
   height: 6px;
+  padding: 0;
   border-radius: 999px;
   background: color-mix(in srgb, var(--ink) 28%, transparent);
   transition:
