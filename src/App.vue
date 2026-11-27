@@ -34,7 +34,6 @@ const themeLabel = computed(() =>
 
 const isScrolled = ref(false)
 const scrollProgress = ref(0)
-const eqPaused = ref(false)
 const supportsScrollTimeline =
   typeof CSS !== 'undefined' &&
   CSS.supports?.('(animation-timeline: scroll()) and (animation-range: 0% 100%)')
@@ -174,18 +173,6 @@ onUnmounted(() => {
             <span class="brand-en">{{ archive?.settings.englishName || 'AFTERGLOW' }}</span>
           </span>
         </RouterLink>
-
-        <button
-          type="button"
-          class="eq-toggle"
-          :aria-label="eqPaused ? '恢复声波动画' : '暂停声波动画'"
-          :title="eqPaused ? '恢复声波动画' : '暂停声波动画'"
-          @click="eqPaused = !eqPaused"
-        >
-          <span class="eq-bars" :class="{ 'is-paused': eqPaused }" aria-hidden="true">
-            <i /><i /><i /><i /><i />
-          </span>
-        </button>
       </div>
 
       <div class="header-actions">
@@ -259,19 +246,6 @@ onUnmounted(() => {
       <AudioLines :size="32" />
     </div>
   </main>
-
-  <footer class="site-footer page-width">
-    <div class="footer-left">
-      <strong>{{ archive?.settings.name || '余响' }}</strong>
-      <span v-if="archive?.settings.owner">{{ archive.settings.owner }}</span>
-    </div>
-    <div class="footer-links">
-      <button v-if="archive" type="button" class="text-link" @click="openAbout">关于</button>
-      <RouterLink to="/admin" class="text-link">
-        管理 <ArrowUpRight :size="13" />
-      </RouterLink>
-    </div>
-  </footer>
 
   <dialog
     ref="aboutDialog"

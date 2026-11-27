@@ -131,90 +131,6 @@
   white-space: nowrap;
 }
 
-/* Animated Acoustic Equalizer + Pause Control (WCAG 2.2.2) */
-.eq-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface-soft);
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 10px;
-  transition: border-color 0.2s ease, color 0.2s ease;
-}
-
-.eq-toggle:hover {
-  border-color: var(--line-strong);
-  color: var(--ink);
-}
-
-.eq-bars {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2.5px;
-  height: 12px;
-}
-
-.eq-bars i {
-  display: block;
-  width: 2px;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--accent);
-  transform-origin: bottom center;
-  transform: scaleY(0.45);
-}
-
-.eq-bars i:nth-child(2) {
-  transform: scaleY(0.85);
-}
-.eq-bars i:nth-child(3) {
-  transform: scaleY(0.55);
-}
-.eq-bars i:nth-child(4) {
-  transform: scaleY(0.95);
-}
-.eq-bars i:nth-child(5) {
-  transform: scaleY(0.4);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .eq-bars:not(.is-paused) i {
-    animation: eq-bounce 1.25s ease-in-out infinite alternate;
-  }
-  .eq-bars:not(.is-paused) i:nth-child(2) {
-    animation-duration: 0.95s;
-    animation-delay: -0.3s;
-  }
-  .eq-bars:not(.is-paused) i:nth-child(3) {
-    animation-duration: 1.4s;
-    animation-delay: -0.7s;
-  }
-  .eq-bars:not(.is-paused) i:nth-child(4) {
-    animation-duration: 1.05s;
-    animation-delay: -0.15s;
-  }
-  .eq-bars:not(.is-paused) i:nth-child(5) {
-    animation-duration: 1.3s;
-    animation-delay: -0.55s;
-  }
-}
-
-@keyframes eq-bounce {
-  0% {
-    transform: scaleY(0.28);
-  }
-  50% {
-    transform: scaleY(0.95);
-  }
-  100% {
-    transform: scaleY(0.42);
-  }
-}
-
 .header-actions {
   display: flex;
   align-items: center;
@@ -440,38 +356,6 @@
     background-color: var(--surface);
     color: var(--ink);
   }
-}
-
-/* ---------- Footer ---------- */
-.site-footer {
-  margin-top: 48px;
-  padding: 28px 0 42px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.footer-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.footer-left strong {
-  font-family: var(--serif);
-  font-size: 16px;
-  color: var(--ink);
-}
-
-.footer-links {
-  display: flex;
-  align-items: center;
-  gap: 18px;
 }
 
 @media (max-width: 720px) {
