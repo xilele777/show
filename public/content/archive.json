@@ -70,7 +70,7 @@
       "date": "2026-11-19",
       "city": "长沙",
       "venue": "长沙音乐厅湘江大厅",
-      "seat": "1 楼 1 排 21 座",
+      "seat": "1楼1排21座",
       "price": "赠票",
       "status": "watched",
       "type": "民族音乐会",
@@ -277,6 +277,121 @@
       ],
       "images": [
         "https://concshow-images.2519175810.workers.dev/uploads/676f4c6c-7b68-43f3-be26-d7098304c5d9.webp"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": false
+    },
+    {
+      "id": "dfc9d0f7-26e0-4c38-80bc-4c97af27ea63",
+      "title": "光影留声 岁月如歌 方琼师生音乐会",
+      "artist": "",
+      "orchestra": "长沙交响乐团",
+      "conductor": "范焘",
+      "soloists": [
+        "方琼"
+      ],
+      "date": "2026-11-06",
+      "city": "长沙",
+      "venue": "长沙音乐厅湘江大厅",
+      "seat": "1楼13排21座",
+      "price": "280",
+      "status": "watched",
+      "type": "sing",
+      "rating": 5,
+      "note": "",
+      "tags": [
+        "方琼"
+      ],
+      "program": [
+        {
+          "title": "《江山无限》（电视剧《康熙微服私访记》片头曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《相思》（电视剧《西游记后传》片尾曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《曙色》（电视剧《走向共和》主题曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《等待》（电视剧《汉武大帝》片尾曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《谁不说俺家乡好》（电影《红日》插曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "男女声二重唱《凉凉》（电视剧《三生三世十里桃花》片尾曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《生命的河》（电影《1942》主题曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《You are my everything》（电视剧《太阳的后裔》插曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《On my own》（选自音乐剧《悲惨世界》）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《The Music of the Night》（选自音乐剧《剧院魅影》）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《All I ask of you》（选自音乐剧《剧院魅影》）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "《这世界那么多人》（电影《我要我们在一起》主题曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "长相忆·今天天气好晴朗》（电视剧《还珠格格》插曲）",
+          "composer": "《山水迢迢",
+          "half": ""
+        },
+        {
+          "title": "男生小组唱《弹起我心爱的土琵琶》（电影《铁道游击队》插曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "男生小组唱《一根竹竿容易弯》",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "女声小合唱《萱草花》（电影《你好，李焕英》主题曲）",
+          "composer": "",
+          "half": ""
+        },
+        {
+          "title": "女声小合唱《如愿》（电影《我和我的父辈》主题曲）",
+          "composer": "",
+          "half": ""
+        }
+      ],
+      "images": [
+        "https://concshow-images.2519175810.workers.dev/uploads/338567af-66de-4953-bffc-2d625e140ecc.webp"
       ],
       "featured": false,
       "published": true,
