@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildDeckSlots,
+  canLoopDeck,
   cardPose,
   circularOffset,
   projectTarget,
@@ -42,16 +42,15 @@ describe('poster deck motion', () => {
     expect(centre.shade).toBe(0)
     expect(centre.opacity).toBe(1)
     expect(cardPose(4, 200).visible).toBe(false)
-    expect(cardPose(4.2, 200, 1, 5.4).visible).toBe(true)
+    expect(cardPose(4.2, 200, 1, 4.6).visible).toBe(true)
     expect(rubberBand(10)).toBeLessThan(0.32)
   })
 
-  it('expands short decks into continuous panoramic slots while preserving single-record decks', () => {
-    expect(buildDeckSlots(['a']).length).toBe(1)
-    const slots = buildDeckSlots(['a', 'b', 'c'], 11)
-    expect(slots).toHaveLength(12)
-    expect(slots.filter((s) => !s.duplicate)).toHaveLength(3)
-    expect(slots[4]?.recordIndex).toBe(1)
+  it('enables continuous looping only when enough records exist to avoid visible duplicates', () => {
+    expect(canLoopDeck(1)).toBe(false)
+    expect(canLoopDeck(6)).toBe(false)
+    expect(canLoopDeck(8)).toBe(false)
+    expect(canLoopDeck(9)).toBe(true)
   })
 })
 

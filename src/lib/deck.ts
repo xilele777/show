@@ -27,31 +27,10 @@ export function circularOffset(index: number, position: number, total: number, l
   return diff
 }
 
-export interface DeckSlot<T> {
-  item: T
-  recordIndex: number
-  slotIndex: number
-  duplicate: boolean
-}
+export const MIN_LOOP_RECORDS = 9
 
-export function buildDeckSlots<T>(items: T[], minSlots = 11): DeckSlot<T>[] {
-  const count = items.length
-  if (count === 0) return []
-  if (count === 1) {
-    return [{ item: items[0]!, recordIndex: 0, slotIndex: 0, duplicate: false }]
-  }
-  const cycles = Math.max(1, Math.ceil(minSlots / count))
-  const slots: DeckSlot<T>[] = []
-  for (let s = 0; s < count * cycles; s++) {
-    const recordIndex = s % count
-    slots.push({
-      item: items[recordIndex]!,
-      recordIndex,
-      slotIndex: s,
-      duplicate: s >= count
-    })
-  }
-  return slots
+export function canLoopDeck(count: number): boolean {
+  return count >= MIN_LOOP_RECORDS
 }
 
 export function cardPose(rel: number, unit: number, intro = 1, maxAbs = 3.1): CardPose {
@@ -61,7 +40,7 @@ export function cardPose(rel: number, unit: number, intro = 1, maxAbs = 3.1): Ca
   const visible = abs <= maxAbs
   const outerRatio = maxAbs > 3.5 ? 0.72 : 0.58
   const spread = Math.min(abs, 1) * unit + Math.max(0, abs - 1) * unit * outerRatio
-  const fadeStart = maxAbs > 3.5 ? 3.4 : 2.2
+  const fadeStart = maxAbs > 3.5 ? 3.2 : 2.2
   const edgeOpacity = abs <= fadeStart ? 1 : Math.max(0, 1 - (abs - fadeStart) / Math.max(0.4, maxAbs - fadeStart))
   const introOpacity = abs < 0.5 ? 1 : clamp(intro * intro, 0, 1)
 

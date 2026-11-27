@@ -5,7 +5,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Pause, Play, Star } fr
 import type { ConcertRecord } from '../lib/schema'
 import { imageUrl } from '../lib/store'
 import {
-  buildDeckSlots,
+  canLoopDeck,
   cardPose,
   circularOffset,
   clamp,
@@ -27,16 +27,13 @@ const stageEl = ref<HTMLElement>()
 const deckEl = ref<HTMLElement>()
 const railEl = ref<HTMLElement>()
 const activeIndex = ref(0)
-const activeSlot = ref(0)
 const glowIndex = ref(0)
 const statusText = ref('')
 const isDragging = ref(false)
 const autoGlide = ref(true)
 
 const total = computed(() => props.records.length)
-const slots = computed(() => buildDeckSlots(props.records, 11))
-const slotCount = computed(() => slots.value.length)
-const canLoop = computed(() => props.records.length >= 2)
+const canLoop = computed(() => canLoopDeck(props.records.length))
 const activeRecord = computed(() => props.records[activeIndex.value] ?? props.records[0])
 const glowRecord = computed(() => props.records[glowIndex.value] ?? activeRecord.value)
 
@@ -45,7 +42,7 @@ const thumbEls: (HTMLElement | null)[] = []
 const hoverLift: number[] = []
 
 const GLIDE_SPEED = 0.14
-const PANORAMA_RANGE = 5.4
+const PANORAMA_RANGE = 4.6
 
 let position = 0
 let velocity = 0
@@ -62,7 +59,7 @@ let tiltX = 0
 let tiltY = 0
 let tiltTargetX = 0
 let tiltTargetY = 0
-let hoverSlot = -1
+let hoverIndex = -1
 let reduceMotion = false
 let pointerInside = false
 let focusInside = false
@@ -123,6 +120,7 @@ function scheduleGlideResume(delay = 2200) {
 }
 
 function toggleAutoGlide() {
+  if (!canLoop.value) return
   autoGlide.value = !autoGlide.value
   if (autoGlide.value) {
     scheduleGlideResume(260)
@@ -132,11 +130,9 @@ function toggleAutoGlide() {
   }
 }
 
-function normalizeSlot(slotPos: number): number {
-  const count = slotCount.value
-  if (!count) return 0
-  if (canLoop.value) return wrapIndex(slotPos, count)
-  return clamp(Math.round(slotPos), 0, Math.max(0, count - 1))
+function normalize(index: number): number {
+  if (canLoop.value) return wrapIndex(index, total.value)
+  return clamp(Math.round(index), 0, Math.max(0, total.value - 1))
 }
 
 function announce(index: number) {
@@ -147,18 +143,15 @@ function announce(index: number) {
   }, 220)
 }
 
-function setActiveSlot(slotPos: number) {
-  const nextSlot = normalizeSlot(slotPos)
-  activeSlot.value = nextSlot
-  const nextRecord = slots.value[nextSlot]?.recordIndex ?? 0
-  if (nextRecord !== activeIndex.value) {
-    activeIndex.value = nextRecord
-    announce(nextRecord)
-  }
+function setActive(index: number) {
+  const next = normalize(index)
+  if (next === activeIndex.value) return
+  activeIndex.value = next
+  announce(next)
 }
 
 function boundTarget(value: number): number {
-  return canLoop.value ? value : clamp(value, 0, Math.max(0, slotCount.value - 1))
+  return canLoop.value ? value : clamp(value, 0, Math.max(0, total.value - 1))
 }
 
 function springTo(next: number) {
@@ -166,34 +159,18 @@ function springTo(next: number) {
   clearTimeout(glideTimer)
   target = boundTarget(next)
   motion = 'spring'
-  setActiveSlot(target)
+  setActive(target)
   kick()
   scheduleGlideResume(2600)
 }
 
-function goToSlot(slotIndex: number) {
-  if (!slotCount.value) return
+function goTo(index: number) {
+  if (!total.value) return
   const base = Math.round(position)
   const next = canLoop.value
-    ? base + Math.round(circularOffset(slotIndex, base, slotCount.value, true))
-    : slotIndex
+    ? base + Math.round(circularOffset(index, base, total.value, true))
+    : index
   springTo(next)
-}
-
-function goToRecord(recordIndex: number) {
-  if (!total.value || !slotCount.value) return
-  const base = Math.round(position)
-  let bestSlot = recordIndex
-  let bestDist = Infinity
-  for (let i = 0; i < slotCount.value; i++) {
-    if (slots.value[i]?.recordIndex !== recordIndex) continue
-    const dist = Math.abs(circularOffset(i, base, slotCount.value, canLoop.value))
-    if (dist < bestDist) {
-      bestDist = dist
-      bestSlot = i
-    }
-  }
-  goToSlot(bestSlot)
 }
 
 function step(delta: number) {
@@ -226,9 +203,9 @@ function measure() {
 }
 
 function render() {
-  const n = slotCount.value
+  const n = total.value
   const loop = canLoop.value
-  const active = activeSlot.value
+  const active = activeIndex.value
   for (let i = 0; i < n; i++) {
     const el = cardEls[i]
     if (!el) continue
@@ -257,13 +234,13 @@ function tick(now: number) {
       motion = 'spring'
       target = boundTarget(Math.round(position))
       velocity = 0
-      setActiveSlot(target)
+      setActive(target)
       busy = true
     } else {
-      const count = slotCount.value
-      position = ((position + GLIDE_SPEED * dt) % count + count) % count
+      const count = total.value
+      position = (((position + GLIDE_SPEED * dt) % count) + count) % count
       target = position
-      setActiveSlot(Math.round(position))
+      setActive(Math.round(position))
       busy = true
     }
   } else if (motion === 'spring') {
@@ -304,8 +281,8 @@ function tick(now: number) {
     tiltY = tiltTargetY
   }
 
-  for (let i = 0; i < slotCount.value; i++) {
-    const goal = i === hoverSlot && i !== activeSlot.value && !isDragging.value ? 1 : 0
+  for (let i = 0; i < total.value; i++) {
+    const goal = i === hoverIndex && i !== activeIndex.value && !isDragging.value ? 1 : 0
     const current = hoverLift[i] ?? 0
     const next = current + (goal - current) * k
     if (Math.abs(goal - next) > 0.002) {
@@ -331,16 +308,16 @@ function openRecord(record: ConcertRecord) {
   router.replace({ path: '/', query: { ...route.query, record: record.id } })
 }
 
-function handleCardClick(record: ConcertRecord, slotIndex: number) {
+function handleCardClick(record: ConcertRecord, index: number) {
   if (suppressClick) return
-  const dist = Math.abs(circularOffset(slotIndex, position, slotCount.value, canLoop.value))
-  if (slotIndex === activeSlot.value && dist < 0.35) openRecord(record)
-  else goToSlot(slotIndex)
+  const dist = Math.abs(circularOffset(index, position, total.value, canLoop.value))
+  if (index === activeIndex.value && dist < 0.35) openRecord(record)
+  else goTo(index)
 }
 
 function dragPosition(value: number): number {
   if (canLoop.value) return value
-  const max = Math.max(0, slotCount.value - 1)
+  const max = Math.max(0, total.value - 1)
   if (value < 0) return -rubberBand(-value)
   if (value > max) return max + rubberBand(value - max)
   return value
@@ -361,9 +338,9 @@ function onPointerDown(event: PointerEvent) {
 function trackHover(event: PointerEvent) {
   if (event.pointerType !== 'mouse') return
   const card = (event.target as Element | null)?.closest<HTMLElement>('.poster-card')
-  const slotIdx = card ? Number(card.dataset.slot) : -1
-  hoverSlot = slotIdx
-  if (card && slotIdx === activeSlot.value && !reduceMotion) {
+  const index = card ? Number(card.dataset.index) : -1
+  hoverIndex = index
+  if (card && index === activeIndex.value && !reduceMotion) {
     const rect = card.getBoundingClientRect()
     const px = clamp((event.clientX - rect.left) / rect.width, 0, 1)
     const py = clamp((event.clientY - rect.top) / rect.height, 0, 1)
@@ -401,7 +378,7 @@ function onPointerMove(event: PointerEvent) {
       samples.length = 0
       tiltTargetX = 0
       tiltTargetY = 0
-      hoverSlot = -1
+      hoverIndex = -1
     } else if (Math.abs(dy) > 10) {
       pointerActive = false
       return
@@ -412,7 +389,7 @@ function onPointerMove(event: PointerEvent) {
 
   position = dragPosition(dragStartPos - (event.clientX - dragOriginX) / unit)
   target = boundTarget(Math.round(position))
-  setActiveSlot(target)
+  setActive(target)
   samples.push({ t: event.timeStamp, p: position })
   while (samples.length > 2 && event.timeStamp - samples[0]!.t > 110) samples.shift()
   kick()
@@ -443,7 +420,7 @@ function onPointerUp(event: PointerEvent) {
 }
 
 function onDeckLeave() {
-  hoverSlot = -1
+  hoverIndex = -1
   tiltTargetX = 0
   tiltTargetY = 0
   kick()
@@ -491,9 +468,9 @@ function onWheel(event: WheelEvent) {
   else if (event.deltaMode === 2) delta *= 800
   if (!delta) return
 
-  if (!canLoop.value && !horizontal && motion !== 'direct') {
+  if (!canLoop.value && motion !== 'direct') {
     const base = Math.round(target)
-    if ((delta < 0 && base <= 0) || (delta > 0 && base >= slotCount.value - 1)) return
+    if ((delta < 0 && base <= 0) || (delta > 0 && base >= total.value - 1)) return
   }
   event.preventDefault()
   clearTimeout(glideTimer)
@@ -513,7 +490,7 @@ function onWheel(event: WheelEvent) {
   }
   position = dragPosition(position + clamp(delta, -90, 90) / (unit * 1.15))
   target = boundTarget(Math.round(position))
-  setActiveSlot(target)
+  setActive(target)
   kick()
   clearTimeout(wheelTimer)
   wheelTimer = setTimeout(() => springTo(Math.round(position)), 120)
@@ -537,11 +514,11 @@ function onWindowKeydown(event: KeyboardEvent) {
       break
     case 'Home':
       if (!inStage) return
-      goToRecord(0)
+      goTo(0)
       break
     case 'End':
       if (!inStage) return
-      goToRecord(total.value - 1)
+      goTo(total.value - 1)
       break
     case 'Enter':
       if (document.activeElement !== stageEl.value || !activeRecord.value) return
@@ -556,7 +533,7 @@ function onWindowKeydown(event: KeyboardEvent) {
 function onThumbEnter(event: PointerEvent, index: number) {
   if (event.pointerType !== 'mouse') return
   clearTimeout(thumbTimer)
-  thumbTimer = setTimeout(() => goToRecord(index), 90)
+  thumbTimer = setTimeout(() => goTo(index), 90)
 }
 
 function onThumbLeave() {
@@ -601,7 +578,6 @@ watch(
   (list, oldList) => {
     if (!list.length) {
       activeIndex.value = 0
-      activeSlot.value = 0
       return
     }
     let index = -1
@@ -621,10 +597,9 @@ watch(
     velocity = 0
     motion = 'idle'
     activeIndex.value = index
-    activeSlot.value = index
     glowIndex.value = index
     hoverLift.length = 0
-    cardEls.length = slotCount.value
+    cardEls.length = list.length
     thumbEls.length = list.length
     startIntro(oldList && oldList.length ? 0.55 : 0)
     if (mounted) {
@@ -657,7 +632,7 @@ watch(
     }
     clearTimeout(glideTimer)
     const index = props.records.findIndex((r) => r.id === id)
-    if (index >= 0 && index !== activeIndex.value) goToRecord(index)
+    if (index >= 0 && index !== activeIndex.value) goTo(index)
   }
 )
 
@@ -727,6 +702,7 @@ onUnmounted(() => {
       type="button"
       class="deck-nav deck-nav--prev icon-button"
       aria-label="上一张海报"
+      :disabled="!canLoop && activeIndex === 0"
       @click="step(-1)"
     >
       <ChevronLeft :size="20" />
@@ -737,6 +713,7 @@ onUnmounted(() => {
       type="button"
       class="deck-nav deck-nav--next icon-button"
       aria-label="下一张海报"
+      :disabled="!canLoop && activeIndex === records.length - 1"
       @click="step(1)"
     >
       <ChevronRight :size="20" />
@@ -753,35 +730,31 @@ onUnmounted(() => {
       @pointerleave="onDeckLeave"
     >
       <button
-        v-for="slot in slots"
-        :key="slot.slotIndex"
-        :ref="(el) => setCardEl(el, slot.slotIndex)"
+        v-for="(record, index) in records"
+        :key="record.id"
+        :ref="(el) => setCardEl(el, index)"
         type="button"
         class="poster-card"
-        :class="{ 'is-active': slot.slotIndex === activeSlot }"
-        :data-slot="slot.slotIndex"
-        :tabindex="slot.duplicate ? -1 : undefined"
-        :aria-hidden="slot.duplicate ? 'true' : undefined"
-        :role="slot.duplicate ? undefined : 'group'"
-        :aria-roledescription="slot.duplicate ? undefined : 'slide'"
-        :aria-label="
-          slot.duplicate ? undefined : `${slot.recordIndex + 1} / ${records.length}：${slot.item.title}`
-        "
-        @click="handleCardClick(slot.item, slot.slotIndex)"
+        :class="{ 'is-active': index === activeIndex }"
+        :data-index="index"
+        role="group"
+        aria-roledescription="slide"
+        :aria-label="`${index + 1} / ${records.length}：${record.title}`"
+        @click="handleCardClick(record, index)"
       >
         <img
-          v-if="slot.item.images[0]"
-          :src="imageUrl(slot.item.images[0])"
-          :alt="slot.duplicate ? '' : slot.item.title"
+          v-if="record.images[0]"
+          :src="imageUrl(record.images[0])"
+          :alt="record.title"
           decoding="async"
           draggable="false"
         />
         <div v-else class="poster-fallback">
-          <span>{{ slot.item.type }}</span>
-          <strong>{{ slot.item.title }}</strong>
+          <span>{{ record.type }}</span>
+          <strong>{{ record.title }}</strong>
         </div>
 
-        <span class="poster-pill">{{ slot.item.type }}</span>
+        <span class="poster-pill">{{ record.type }}</span>
         <span class="poster-open-pill" aria-hidden="true">
           <ArrowUpRight :size="16" />
         </span>
@@ -823,7 +796,7 @@ onUnmounted(() => {
               {{ String(records.length).padStart(2, '0') }}
             </span>
             <button
-              v-if="records.length > 1"
+              v-if="canLoop"
               type="button"
               class="glide-toggle"
               :aria-label="autoGlide ? '暂停连续漫游' : '开启连续漫游'"
@@ -849,7 +822,7 @@ onUnmounted(() => {
         :aria-current="index === activeIndex ? 'true' : undefined"
         :aria-label="record.title"
         :title="record.title"
-        @click="goToRecord(index)"
+        @click="goTo(index)"
         @pointerenter="onThumbEnter($event, index)"
         @pointerleave="onThumbLeave"
       />
