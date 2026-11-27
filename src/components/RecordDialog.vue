@@ -30,7 +30,7 @@ const copied = ref(false)
 const copyError = ref('')
 const swipeX = ref(0)
 const swiping = ref(false)
-const isWidePhoto = ref(false)
+const wideMap = ref<Record<string, boolean>>({})
 
 const record = computed(() => visibleRecords.value.find((item) => item.id === route.query.record))
 const navList = computed(() => {
@@ -48,6 +48,7 @@ const nextRecord = computed(() =>
 )
 const missing = computed(() => Boolean(route.query.record && !record.value && archive.value))
 const activeImage = computed(() => record.value?.images[photo.value])
+const isWidePhoto = computed(() => (activeImage.value ? Boolean(wideMap.value[activeImage.value]) : false))
 const photoTransition = computed(() => (photoDir.value > 0 ? 'photo-next' : 'photo-prev'))
 const recordTransition = computed(() => (recordDir.value > 0 ? 'detail-next' : 'detail-prev'))
 
@@ -76,10 +77,17 @@ function handleNativeClose() {
   clearRecordQuery()
 }
 
-function onPhotoLoad(event: Event) {
-  const img = event.target as HTMLImageElement | null
-  if (!img || !img.naturalHeight) return
-  isWidePhoto.value = img.naturalWidth / img.naturalHeight > 1.28
+function recordImageAspect(path: string, img: HTMLImageElement) {
+  if (!img.naturalHeight) return
+  wideMap.value[path] = img.naturalWidth / img.naturalHeight > 1.28
+}
+
+function preloadImages(paths: string[]) {
+  for (const path of paths) {
+    const img = new Image()
+    img.onload = () => recordImageAspect(path, img)
+    img.src = imageUrl(path)
+  }
 }
 
 watch(
@@ -91,10 +99,6 @@ watch(
   { immediate: true }
 )
 
-watch(activeImage, () => {
-  isWidePhoto.value = false
-})
-
 watch(
   record,
   async (value, oldValue) => {
@@ -104,7 +108,7 @@ watch(
     swipeX.value = 0
     copied.value = false
     copyError.value = ''
-    isWidePhoto.value = false
+    if (value?.images.length) preloadImages(value.images)
     await nextTick()
     if (value && oldValue && value.id !== oldValue.id) {
       contentEl.value?.scrollTo({ top: 0 })
@@ -330,17 +334,19 @@ async function copyLink() {
           />
         </Transition>
 
-        <Transition :name="photoTransition">
-          <img
-            :key="`${record.id}-${activeImage}`"
-            class="detail-stage-img"
-            :src="imageUrl(activeImage!)"
-            :alt="`${record.title} · ${photo + 1}`"
-            decoding="async"
-            draggable="false"
-            @load="onPhotoLoad"
-          />
-        </Transition>
+        <div class="detail-stage-track">
+          <Transition :name="photoTransition">
+            <img
+              :key="`${record.id}-${activeImage}`"
+              class="detail-stage-img"
+              :src="imageUrl(activeImage!)"
+              :alt="`${record.title} · ${photo + 1}`"
+              decoding="sync"
+              draggable="false"
+              @load="activeImage && recordImageAspect(activeImage, $event.target as HTMLImageElement)"
+            />
+          </Transition>
+        </div>
 
         <template v-if="record.images.length > 1">
           <button
