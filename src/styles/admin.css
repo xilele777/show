@@ -1194,6 +1194,7 @@
 }
 
 .cast-editor,
+.program-credit-editor,
 .program-entry-editor {
   min-inline-size: 0;
   border: 1px solid var(--line);
@@ -1202,6 +1203,7 @@
 }
 
 .cast-editor legend,
+.program-credit-editor legend,
 .program-entry-editor legend {
   padding-inline: 6px;
   font-size: 12px;
@@ -1224,6 +1226,8 @@
 }
 
 .cast-editor label,
+.program-credit-editor label,
+.program-description-editor,
 .program-row label,
 .program-extra-fields label {
   display: grid;
@@ -1236,6 +1240,11 @@
   color: var(--muted);
   font-size: 12px;
   margin-block: 0 12px;
+}
+
+.program-credit-editor,
+.program-description-editor {
+  margin-block-start: 12px;
 }
 
 .program-row {

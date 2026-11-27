@@ -591,6 +591,20 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   gap: 9px;
 }
 
+.setlist-section-heading {
+  margin-block: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.program-description {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
 .program li {
   display: flex;
   align-items: baseline;

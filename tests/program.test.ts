@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { normalizeProgramItem, recordSchema, formatCredits } from '../src/lib/schema'
-import { parseProgramText } from '../src/lib/program'
+import { groupProgram, parseProgramText } from '../src/lib/program'
 import { createRecordSchema, changesSchema } from '../mcp/archive'
 import { filterRecords } from '../src/lib/filters'
 import { archiveFixture } from './fixtures/archive'
@@ -21,10 +21,12 @@ describe('complete program and personnel data', () => {
     const old = JSON.parse(JSON.stringify(archiveFixture.records[0]))
     delete old.cast
     delete old.subtitle
+    delete old.time
     old.program = ['旧曲目', { title: '旧唱段', composer: '作曲家', half: '上半场' }]
     const parsed = recordSchema.parse(old)
     expect(parsed.cast).toEqual([])
     expect(parsed.subtitle).toBe('')
+    expect(parsed.time).toBe('')
     expect(parsed.artist).toBe(old.artist)
     expect(parsed.note).toBe(old.note)
     expect(normalizeProgramItem(parsed.program[0]!)).toMatchObject({
@@ -48,6 +50,9 @@ describe('complete program and personnel data', () => {
       lyricist: '阎肃',
       composer: '羊鸣、姜春阳、金砂',
       performers: ['曹冬'],
+      section: '',
+      credits: [],
+      description: '',
       half: '上半场'
     })
     expect(program[1]!.performers).toEqual(['张莉莉', '蒋立章'])
@@ -69,6 +74,55 @@ describe('complete program and personnel data', () => {
     expect(() => parseProgramText('| 曲目名称 | 作曲 |\n| 红梅赞 |')).toThrow('列数')
     expect(() => parseProgramText('| 红梅赞 | 羊鸣 |')).toThrow('表头')
     expect(() => parseProgramText('| 曲目名称 | 作曲 |\n| | 羊鸣 |')).toThrow('空白曲目')
+  })
+
+  it('keeps repeated subsections in place and numbers continuously within each half', () => {
+    const program = [
+      { title: '牧歌', half: '上半场' as const, section: '混声合唱' },
+      { title: '步调', half: '上半场' as const, section: '混声合唱' },
+      { title: '美丽的神话', half: '上半场' as const, section: '呼麦表演' },
+      { title: '喜欢你', half: '上半场' as const, section: '混声合唱' },
+      { title: '我从草原来', half: '下半场' as const, section: '女声合唱' }
+    ]
+    const groups = groupProgram(program)
+    expect(groups.map(({ half, section, start }) => ({ half, section, start }))).toEqual([
+      { half: '上半场', section: '混声合唱', start: 1 },
+      { half: '上半场', section: '呼麦表演', start: 3 },
+      { half: '上半场', section: '混声合唱', start: 4 },
+      { half: '下半场', section: '女声合唱', start: 1 }
+    ])
+    expect(groups.flatMap((group) => group.items.map((item) => item.title))).toEqual(
+      program.map((item) => item.title)
+    )
+  })
+
+  it('preserves time and detailed credits through import, JSON saves and searches', () => {
+    const program = parseProgramText(
+      '| 曲目 | 表演形式 | 出处 | 编曲 | 领唱 | 马头琴伴奏 | 节目说明 |\n| --- | --- | --- | --- | --- | --- | --- |\n| 牧歌 | 混声合唱 | 内蒙古民歌 | 瞿希贤 | 乌日罕 | 韩牟人 | 资助说明 |'
+    )
+    expect(program[0]).toMatchObject({
+      title: '牧歌',
+      section: '混声合唱',
+      source: '内蒙古民歌',
+      composer: '',
+      performers: [],
+      credits: [
+        { role: '编曲', name: '瞿希贤' },
+        { role: '领唱', name: '乌日罕' },
+        { role: '马头琴伴奏', name: '韩牟人' }
+      ],
+      description: '资助说明'
+    })
+    const record = recordSchema.parse({ ...archiveFixture.records[0], time: '19:30', program })
+    expect(recordSchema.parse(JSON.parse(JSON.stringify(record)))).toEqual(record)
+    for (const q of ['混声合唱', '瞿希贤', '马头琴伴奏', '资助说明']) {
+      expect(filterRecords([record], { q, year: '', city: '', type: '', status: '' })).toHaveLength(1)
+    }
+    for (const time of ['24:00', '19:60', '9:30']) {
+      expect(() =>
+        createRecordSchema.parse({ title: '测试', date: '2026-10-13', city: '长沙', type: 'sing', time })
+      ).toThrow('HH:mm')
+    }
   })
 
   it('rejects tables in personal thoughts and repeated personnel lists in subtitle fields', () => {

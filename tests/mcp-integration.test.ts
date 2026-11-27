@@ -52,6 +52,7 @@ it('initializes an actual stdio MCP process, lists tools, and performs validated
     const value = JSON.parse((overview.content as { text: string }[])[0]!.text)
     expect(value.fieldSemantics.note).toContain('个人观演感想')
     expect(value.optionalFields).toContain('cast')
+    expect(value.optionalFields).toContain('time')
     const createTool = tools.find((tool) => tool.name === 'create_concerts')!
     expect(JSON.stringify(createTool.inputSchema)).toContain('不得填入演员名单')
     const create = await client.callTool({
@@ -62,6 +63,7 @@ it('initializes an actual stdio MCP process, lists tools, and performs validated
           {
             title: '中文测试演出',
             date: '2025-06-01',
+            time: '19:30',
             city: '上海',
             type: '音乐会',
             cast: [{ name: '演出人员甲' }],
@@ -73,6 +75,12 @@ it('initializes an actual stdio MCP process, lists tools, and performs validated
                 lyricist: '阎肃',
                 composer: '羊鸣、姜春阳、金砂',
                 performers: ['曹冬'],
+                section: '独唱',
+                credits: [
+                  { name: '伴奏者乙', role: '钢琴伴奏' },
+                  { name: '编曲者丙', role: '编曲' }
+                ],
+                description: '资助说明',
                 half: '下半场'
               }
             ]
@@ -94,8 +102,19 @@ it('initializes an actual stdio MCP process, lists tools, and performs validated
     const saved = JSON.parse((get.content as { text: string }[])[0]!.text).record
     expect(saved.program[0].source).toBe('1964年歌剧《江姐》')
     expect(saved.program[0].lyricist).toBe('阎肃')
+    expect(saved.time).toBe('19:30')
+    expect(saved.program[0].section).toBe('独唱')
+    expect(saved.program[0].credits).toEqual([
+      { name: '伴奏者乙', role: '钢琴伴奏' },
+      { name: '编曲者丙', role: '编曲' }
+    ])
+    expect(saved.program[0].description).toBe('资助说明')
     const performerSearch = await client.callTool({ name: 'list_concerts', arguments: { query: '曹冬' } })
     expect(JSON.parse((performerSearch.content as { text: string }[])[0]!.text).total).toBe(1)
+    for (const query of ['编曲者丙', '钢琴伴奏', '独唱', '资助说明']) {
+      const search = await client.callTool({ name: 'list_concerts', arguments: { query } })
+      expect(JSON.parse((search.content as { text: string }[])[0]!.text).total).toBe(1)
+    }
     const failed = await client.callTool({
       name: 'create_concerts',
       arguments: {

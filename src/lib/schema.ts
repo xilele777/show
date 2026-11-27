@@ -51,6 +51,26 @@ export const programItemSchema = z
     half: z.enum(['', '上半场', '下半场', '加演']).default('').describe('节目单分段，保留原有顺序'),
     source: z.string().trim().max(200).default('').describe('剧目出处，保留用户提供的年份和剧目名称'),
     lyricist: z.string().trim().max(160).default('').describe('作词，可包含多位作词者及执笔说明'),
+    section: z
+      .string()
+      .trim()
+      .max(100)
+      .default('')
+      .describe(
+        '原节目单中的小节标题，如混声合唱、呼麦表演或团体名称；按原顺序保留重复小节，不合并到其他位置'
+      ),
+    credits: z
+      .array(castMemberSchema)
+      .max(50)
+      .default([])
+      .describe(
+        '该曲的详细署名，name 保存姓名、role 保存原文职责，例如编曲、改编、领唱、呼麦、钢琴伴奏、马头琴伴奏；不要把编曲者当作演唱者'
+      ),
+    description: z
+      .string()
+      .max(2000)
+      .default('')
+      .describe('该曲的客观节目说明，例如资助说明；不用于个人感想'),
     performers: z
       .array(z.string().trim().min(1).max(80))
       .max(30)
@@ -92,6 +112,12 @@ export const recordSchema = z.object({
     .default([])
     .describe('仅用于用户明确标注的独奏家；一般音乐家或演员名单应使用 cast'),
   date,
+  time: z
+    .string()
+    .trim()
+    .refine((value) => value === '' || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value), '时间须为 HH:mm')
+    .default('')
+    .describe('明确提供的演出开始时间，24小时制 HH:mm；未知时留空'),
   city: z.string().trim().min(1).max(80),
   venue: z.string().trim().max(160).default(''),
   seat: z.string().trim().max(80).default(''),
@@ -176,6 +202,7 @@ export function emptyRecord(defaultType = '音乐会'): ConcertRecord {
     conductor: '',
     soloists: [],
     date: today,
+    time: '',
     city: '',
     venue: '',
     seat: '',

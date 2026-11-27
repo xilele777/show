@@ -11,7 +11,7 @@ const instructions = `这是余响音乐会档案的写入服务。
 批量新增用 create_concerts，一次最多100场；同一演出自动跳过，补充资料用 update_concerts。传 expectedRevision 可防止过期修改。
 新记录默认公开展示、评分0（未评分）；日期晚于中国时区今天默认 upcoming，历史日期默认 watched。分类优先沿用已有分类。
 人员、节目单、个人感想分别录入，不得用其他字段代替缺失字段。cast 保存演出人员/演员表，逐人填写 name 和已知 role；未提供职责时 role 留空，不能把普通音乐家都当成 soloists。subtitle 仅保存明确提供的副标题或巡演副标；artist 仅兼容旧署名，新记录不要使用，也不得塞入演员名单。
-program 逐曲保存 title（曲名）、source（剧目出处及提供的年份）、lyricist（作词）、composer（作曲）、performers（该曲演唱/演奏者姓名数组）、half（上半场、下半场、加演或空字符串），保留节目原有顺序和全部已提供信息。不要把完整节目表复制到 note。note 仅保存用户实际提供的个人观演感想，没有感想就留空，不得代写。人名写法矛盾时保留来源写法并提示用户确认，不擅自统一；未知信息留空。写入后核对各区显示的含义及节目数量，不能只以校验通过判断录入正确。
+program 逐曲保存 title（曲名）、source（剧目出处及提供的年份）、lyricist（作词）、composer（作曲）、performers（该曲演唱/演奏者姓名数组）、half（上半场、下半场、加演或空字符串），保留节目原有顺序和全部已提供信息。section 保存原节目单小节标题，如混声合唱、呼麦表演或团体名称，重复小节按原位置保留。credits 逐人保存 name 和原文 role，包括编曲、改编、领唱、呼麦、钢琴伴奏、马头琴伴奏；编曲和改编者不能当作演出人员。description 保存该曲的客观节目说明或资助信息。明确提供的开始时间用 time（HH:mm）。不要把完整节目表复制到 note。note 仅保存用户实际提供的个人观演感想，没有感想就留空，不得代写。人名写法矛盾时保留来源写法并提示用户确认，不擅自统一；未知信息留空。写入后核对各区显示的含义及节目数量，不能只以校验通过判断录入正确。
 图片先 upload_images，可指定 recordId 自动关联；外部图片目录需 CONCSHOW_IMAGE_ROOTS 放行。上传结果的 path 可用于记录 images。
 录入或修改保存在本地项目文件；提示用户刷新本地网页查看，管理页旧浏览器草稿需先导出再合并。
 publish_archive 将记录提交到 GitHub 并触发 Pages 部署。仅在用户要求发布或已授权上线时使用；可先 dryRun 查看差异。普通录入请求不自动发布。
@@ -29,7 +29,7 @@ async function result(operation: () => Promise<unknown>): Promise<CallToolResult
 
 export function createServer(root: string) {
   const store = new ArchiveStore(root)
-  const server = new McpServer({ name: 'concshow', version: '1.1.0' }, { instructions })
+  const server = new McpServer({ name: 'concshow', version: '1.2.0' }, { instructions })
   const readOnly = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
   server.registerTool(
     'sync_archive',
@@ -65,6 +65,7 @@ export function createServer(root: string) {
             'conductor',
             'soloists',
             'venue',
+            'time',
             'seat',
             'price',
             'status',
@@ -82,7 +83,9 @@ export function createServer(root: string) {
             cast: recordSchema.shape.cast.description,
             soloists: recordSchema.shape.soloists.description,
             note: recordSchema.shape.note.description,
-            program: '完整节目单，保留出处、作词、作曲、演唱/演奏者和原有顺序；不复制到感想中'
+            time: recordSchema.shape.time.description,
+            program:
+              '完整节目单，保留出处、作词、作曲、演唱/演奏者、section 小节、credits 各项职责署名、description 客观节目说明和原有顺序；不复制到感想中'
           },
           castExample: [{ name: '演出人员姓名', role: '' }],
           programExample: {
@@ -91,7 +94,10 @@ export function createServer(root: string) {
             lyricist: '阎肃',
             composer: '羊鸣、姜春阳、金砂',
             performers: ['演唱者姓名'],
-            half: '上半场'
+            half: '上半场',
+            section: '独唱',
+            credits: [{ name: '伴奏者姓名', role: '钢琴伴奏' }],
+            description: ''
           },
           defaults: {
             rating: 0,
@@ -146,7 +152,7 @@ export function createServer(root: string) {
                   ...record.program.map((entry) =>
                     typeof entry === 'string'
                       ? entry
-                      : `${entry.title} ${entry.source} ${entry.composer} ${entry.lyricist} ${entry.performers.join(' ')}`
+                      : `${entry.title} ${entry.source} ${entry.composer} ${entry.lyricist} ${entry.section} ${entry.description} ${entry.credits.map((credit) => `${credit.role} ${credit.name}`).join(' ')} ${entry.performers.join(' ')}`
                   )
                 ]
                   .join(' ')
@@ -172,6 +178,7 @@ export function createServer(root: string) {
                 subtitle,
                 cast,
                 date,
+                time,
                 city,
                 venue,
                 type,
@@ -186,6 +193,7 @@ export function createServer(root: string) {
                 subtitle,
                 cast,
                 date,
+                time,
                 city,
                 venue,
                 type,

@@ -163,6 +163,7 @@ watch(
     cloned.conductor = cloned.conductor ?? ''
     cloned.seat = cloned.seat ?? ''
     cloned.price = cloned.price ?? ''
+    cloned.time = cloned.time ?? ''
     cloned.status = cloned.status ?? 'watched'
     draft.value = cloned
     programItems.value = (cloned.program ?? []).map(normalizeProgramItem)
@@ -232,6 +233,9 @@ function addProgramItem() {
     half: prevHalf,
     source: '',
     lyricist: '',
+    section: programItems.value.at(-1)?.section ?? '',
+    credits: [],
+    description: '',
     performers: []
   })
 }
@@ -339,6 +343,7 @@ function submit() {
     const labels: Record<string, string> = {
       title: '演出标题',
       date: '日期',
+      time: '开始时间',
       city: '城市',
       cast: '演出人员',
       program: '节目单',
@@ -348,6 +353,9 @@ function submit() {
       lyricist: '作词',
       performers: '演唱 / 演奏者',
       composer: '作曲',
+      section: '节目小节',
+      credits: '曲目署名',
+      description: '节目说明',
       note: '个人感想',
       subtitle: '副标题'
     }
@@ -650,6 +658,11 @@ function submit() {
         </div>
       </div>
 
+      <label for="record-time">
+        开始时间（可留空）
+        <input id="record-time" name="time" v-model="draft.time" type="time" step="60" />
+      </label>
+
       <label>
         城市 *
         <input v-model="draft.city" required maxlength="80" placeholder="例如：上海" />
@@ -852,6 +865,16 @@ function submit() {
               </div>
             </div>
             <div class="program-extra-fields">
+              <label :for="`program-section-${index}`">
+                节目小节 / 表演形式
+                <input
+                  :id="`program-section-${index}`"
+                  :name="`program-${index}-section`"
+                  v-model="item.section"
+                  maxlength="100"
+                  placeholder="例如：混声合唱 / 马头琴独奏"
+                />
+              </label>
               <label :for="`program-source-${index}`">
                 剧目出处
                 <input
@@ -876,6 +899,58 @@ function submit() {
                 />
               </label>
             </div>
+            <fieldset class="program-credit-editor">
+              <legend>曲目署名</legend>
+              <p class="field-hint">保留节目单中的职责，如编曲、改编、领唱、呼麦、钢琴伴奏。</p>
+              <div v-for="(credit, creditIndex) in item.credits" :key="creditIndex" class="cast-editor-row">
+                <label :for="`program-credit-role-${index}-${creditIndex}`">
+                  职责
+                  <input
+                    :id="`program-credit-role-${index}-${creditIndex}`"
+                    :name="`program-${index}-credit-${creditIndex}-role`"
+                    v-model="credit.role"
+                    maxlength="80"
+                  />
+                </label>
+                <label :for="`program-credit-name-${index}-${creditIndex}`">
+                  姓名 *
+                  <input
+                    :id="`program-credit-name-${index}-${creditIndex}`"
+                    :name="`program-${index}-credit-${creditIndex}-name`"
+                    v-model="credit.name"
+                    maxlength="80"
+                    required
+                  />
+                </label>
+                <button
+                  type="button"
+                  class="icon-button"
+                  :aria-label="`移除曲目 ${index + 1} 署名 ${credit.name || creditIndex + 1}`"
+                  @click="item.credits.splice(creditIndex, 1)"
+                >
+                  <X :size="14" />
+                </button>
+              </div>
+              <button
+                type="button"
+                class="button secondary small"
+                :disabled="item.credits.length >= 50"
+                @click="item.credits.push({ name: '', role: '' })"
+              >
+                <Plus :size="14" />添加曲目署名
+              </button>
+            </fieldset>
+            <label :for="`program-description-${index}`" class="program-description-editor">
+              节目说明
+              <textarea
+                :id="`program-description-${index}`"
+                :name="`program-${index}-description`"
+                v-model="item.description"
+                rows="2"
+                maxlength="2000"
+                placeholder="节目背景或资助说明"
+              />
+            </label>
           </fieldset>
 
           <button type="button" class="button secondary small add-program-btn" @click="addProgramItem">

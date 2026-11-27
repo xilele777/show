@@ -14,7 +14,8 @@ import {
   ArrowRight
 } from 'lucide-vue-next'
 import { archive, visibleRecords, imageUrl } from '../lib/store'
-import { dateLabel, formatPriceLabel, normalizeProgramItem, type ProgramItem } from '../lib/schema'
+import { dateLabel, formatPriceLabel } from '../lib/schema'
+import { groupProgram } from '../lib/program'
 import { categoryStyle } from '../lib/categories'
 import { filterRecords, readFilters } from '../lib/filters'
 import { closeTopLayer, setupDialogLightDismiss } from '../lib/motion'
@@ -60,19 +61,7 @@ const hasDetailFacts = computed(() => {
 
 const groupedProgram = computed(() => {
   const rec = activeRecord.value
-  if (!rec || !rec.program.length) return []
-  const normalized = rec.program.map(normalizeProgramItem)
-  const groups: { half: string; items: (ProgramItem & { index: number })[] }[] = []
-  for (const item of normalized) {
-    const label = item.half || ''
-    const existing = groups.find((g) => g.half === label)
-    if (existing) {
-      existing.items.push({ ...item, index: existing.items.length + 1 })
-    } else {
-      groups.push({ half: label, items: [{ ...item, index: 1 }] })
-    }
-  }
-  return groups
+  return rec ? groupProgram(rec.program) : []
 })
 
 let copyTimer: ReturnType<typeof setTimeout> | undefined
@@ -437,7 +426,11 @@ async function copyLink() {
                 {{ activeRecord.subtitle || activeRecord.artist }}
               </p>
               <div class="detail-meta">
-                <span><CalendarDays :size="13" />{{ dateLabel(activeRecord.date) }}</span>
+                <span
+                  ><CalendarDays :size="13" />{{
+                    dateLabel(activeRecord.date) + (activeRecord.time ? ` ${activeRecord.time}` : '')
+                  }}</span
+                >
                 <span>
                   <MapPin :size="13" />{{ activeRecord.city
                   }}<template v-if="activeRecord.venue"> · {{ activeRecord.venue }}</template>
@@ -459,7 +452,7 @@ async function copyLink() {
 
             <dl v-if="hasDetailFacts" class="detail-facts">
               <template v-if="activeRecord.orchestra">
-                <dt>乐团</dt>
+                <dt>演出团体</dt>
                 <dd>{{ activeRecord.orchestra }}</dd>
               </template>
               <template v-if="activeRecord.conductor">
@@ -493,9 +486,22 @@ async function copyLink() {
             <section v-if="groupedProgram.length" class="setlist-block">
               <h2>节目单</h2>
               <div class="setlist-groups">
-                <div v-for="group in groupedProgram" :key="group.half || 'default'" class="setlist-group">
-                  <h3 v-if="group.half" class="setlist-half-heading">{{ group.half }}</h3>
-                  <ol class="program" role="list">
+                <div v-for="(group, groupIndex) in groupedProgram" :key="groupIndex" class="setlist-group">
+                  <h3
+                    v-if="
+                      group.half && (groupIndex === 0 || groupedProgram[groupIndex - 1]?.half !== group.half)
+                    "
+                    class="setlist-half-heading"
+                  >
+                    {{ group.half }}
+                  </h3>
+                  <component
+                    :is="group.half ? 'h4' : 'h3'"
+                    v-if="group.section"
+                    class="setlist-section-heading"
+                    >{{ group.section }}</component
+                  >
+                  <ol class="program" role="list" :start="group.start">
                     <li v-for="item in group.items" :key="item.index">
                       <span class="program-num" aria-hidden="true">{{
                         String(item.index).padStart(2, '0')
@@ -503,7 +509,13 @@ async function copyLink() {
                       <div class="program-main">
                         <strong class="program-title">{{ item.title }}</strong>
                         <dl
-                          v-if="item.source || item.composer || item.lyricist || item.performers.length"
+                          v-if="
+                            item.source ||
+                            item.composer ||
+                            item.lyricist ||
+                            item.performers.length ||
+                            item.credits.length
+                          "
                           class="program-credits"
                         >
                           <template v-if="item.source"
@@ -522,7 +534,12 @@ async function copyLink() {
                             ><dt>演唱 / 演奏</dt>
                             <dd>{{ item.performers.join('、') }}</dd></template
                           >
+                          <template v-for="(credit, creditIndex) in item.credits" :key="creditIndex">
+                            <dt>{{ credit.role || '署名' }}</dt>
+                            <dd>{{ credit.name }}</dd>
+                          </template>
                         </dl>
+                        <p v-if="item.description" class="program-description">{{ item.description }}</p>
                       </div>
                     </li>
                   </ol>

@@ -11,6 +11,28 @@ export function splitPerformerNames(value: string): string[] {
   ]
 }
 
+export function groupProgram(entries: Parameters<typeof normalizeProgramItem>[0][]) {
+  const groups: {
+    half: string
+    section: string
+    start: number
+    items: (ProgramItem & { index: number })[]
+  }[] = []
+  const counts = new Map<string, number>()
+  for (const entry of entries) {
+    const item = normalizeProgramItem(entry)
+    const index = (counts.get(item.half) ?? 0) + 1
+    counts.set(item.half, index)
+    const last = groups.at(-1)
+    if (last && last.half === item.half && last.section === item.section) {
+      last.items.push({ ...item, index })
+    } else {
+      groups.push({ half: item.half, section: item.section, start: index, items: [{ ...item, index }] })
+    }
+  }
+  return groups
+}
+
 // Accept complete program tables as well as the original one-song-per-line format.
 // Parse the entire input before callers change a draft, so errors cannot leave partial rows.
 export function parseProgramText(text: string): ProgramItem[] {
@@ -53,6 +75,11 @@ export function parseProgramText(text: string): ProgramItem[] {
           composer: field('作曲', '作曲家'),
           lyricist: field('作词', '作词者'),
           source: field('剧目出处', '出处', '剧目'),
+          section: field('小节', '节目分组', '表演形式'),
+          description: field('节目说明'),
+          credits: ['编曲', '改编', '领唱', '呼麦', '钢琴', '钢琴伴奏', '马头琴', '马头琴伴奏'].flatMap(
+            (role) => splitPerformerNames(field(role)).map((name) => ({ name, role }))
+          ),
           performers: splitPerformerNames(field('演唱', '演奏', '演唱者', '演奏者', '表演者')),
           half
         })

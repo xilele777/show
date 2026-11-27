@@ -47,7 +47,7 @@ export function filterRecords(records: ConcertRecord[], filters: RecordFilters):
           ...record.tags,
           ...record.program.map((p) => {
             const item = normalizeProgramItem(p)
-            return `${item.composer} ${item.title} ${item.source} ${item.lyricist} ${item.performers.join(' ')}`
+            return `${item.composer} ${item.title} ${item.source} ${item.lyricist} ${item.section} ${item.description} ${item.credits.map((credit) => `${credit.role} ${credit.name}`).join(' ')} ${item.performers.join(' ')}`
           })
         ]
           .join(' ')
