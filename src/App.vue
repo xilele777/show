@@ -66,6 +66,7 @@ function onBrandPointerDown(event: PointerEvent) {
   brandDownX = event.clientX
   brandDownY = event.clientY
   brandTriggered = false
+  ;(event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId)
   clearTimeout(holdTimer)
   clearTimeout(holdVisualTimer)
   holdVisualTimer = setTimeout(() => {
@@ -232,6 +233,8 @@ onUnmounted(() => {
       class="floating-brand"
       :class="{ 'is-holding': brandHolding }"
       aria-label="余响，返回首页"
+      draggable="false"
+      @dragstart.prevent
       @pointerdown="onBrandPointerDown"
       @pointermove="onBrandPointerMove"
       @pointerup="resetBrandGesture"
