@@ -66,7 +66,9 @@ function onBrandPointerDown(event: PointerEvent) {
   brandDownX = event.clientX
   brandDownY = event.clientY
   brandTriggered = false
-  ;(event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId)
+  window.addEventListener('pointermove', onWindowBrandMove)
+  window.addEventListener('pointerup', resetBrandGesture)
+  window.addEventListener('pointercancel', resetBrandGesture)
   clearTimeout(holdTimer)
   clearTimeout(holdVisualTimer)
   holdVisualTimer = setTimeout(() => {
@@ -77,7 +79,7 @@ function onBrandPointerDown(event: PointerEvent) {
   }, 680)
 }
 
-function onBrandPointerMove(event: PointerEvent) {
+function onWindowBrandMove(event: PointerEvent) {
   if (event.pointerId !== brandPointerId || brandTriggered) return
   const dx = event.clientX - brandDownX
   const dy = event.clientY - brandDownY
@@ -93,21 +95,31 @@ function onBrandPointerMove(event: PointerEvent) {
 function resetBrandGesture() {
   brandPointerId = -1
   brandHolding.value = false
+  window.removeEventListener('pointermove', onWindowBrandMove)
+  window.removeEventListener('pointerup', resetBrandGesture)
+  window.removeEventListener('pointercancel', resetBrandGesture)
   clearTimeout(holdTimer)
   clearTimeout(holdVisualTimer)
+  if (brandTriggered) {
+    setTimeout(() => {
+      brandTriggered = false
+    }, 60)
+  }
 }
 
-function onBrandClick(event: MouseEvent) {
+function onBrandClick(event: MouseEvent, navigate: (e?: MouseEvent) => void) {
+  event.preventDefault()
   if (brandTriggered) {
-    event.preventDefault()
     brandTriggered = false
     return
   }
-  if (route.path === '/admin') return
+  if (route.path === '/admin') {
+    navigate(event)
+    return
+  }
   brandClickCount += 1
   clearTimeout(brandClickTimer)
   if (brandClickCount >= 3) {
-    event.preventDefault()
     brandClickCount = 0
     enterAdminStealth()
     return
@@ -115,6 +127,7 @@ function onBrandClick(event: MouseEvent) {
   brandClickTimer = setTimeout(() => {
     brandClickCount = 0
   }, 950)
+  navigate(event)
 }
 
 function onGlobalKeydown(event: KeyboardEvent) {
@@ -205,8 +218,7 @@ onUnmounted(() => {
   media.removeEventListener('change', applyTheme)
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('keydown', onGlobalKeydown)
-  clearTimeout(holdTimer)
-  clearTimeout(holdVisualTimer)
+  resetBrandGesture()
   clearTimeout(brandClickTimer)
   cleanupAboutDismiss?.()
 })
@@ -228,21 +240,20 @@ onUnmounted(() => {
   />
 
   <header class="floating-hud" :class="{ 'is-hidden': hudHidden }">
-    <RouterLink
-      to="/"
-      class="floating-brand"
-      :class="{ 'is-holding': brandHolding }"
-      aria-label="余响，返回首页"
-      draggable="false"
-      @dragstart.prevent
-      @pointerdown="onBrandPointerDown"
-      @pointermove="onBrandPointerMove"
-      @pointerup="resetBrandGesture"
-      @pointercancel="resetBrandGesture"
-      @click="onBrandClick"
-    >
-      <span class="brand-mark"><AudioLines :size="15" :stroke-width="1.9" /></span>
-      <span class="brand-cn">{{ archive?.settings.name || '余响' }}</span>
+    <RouterLink v-slot="{ href, navigate }" custom to="/">
+      <a
+        :href="href"
+        class="floating-brand"
+        :class="{ 'is-holding': brandHolding }"
+        aria-label="余响，返回首页"
+        draggable="false"
+        @dragstart.prevent
+        @pointerdown="onBrandPointerDown"
+        @click="onBrandClick($event, navigate)"
+      >
+        <span class="brand-mark"><AudioLines :size="15" :stroke-width="1.9" /></span>
+        <span class="brand-cn">{{ archive?.settings.name || '余响' }}</span>
+      </a>
     </RouterLink>
 
     <div class="floating-actions">
