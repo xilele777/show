@@ -33,6 +33,13 @@ export function canLoopDeck(count: number): boolean {
   return count >= MIN_LOOP_RECORDS
 }
 
+export function initialDeckIndex(count: number, routeIndex: number, featuredIndex: number): number {
+  if (count <= 0) return 0
+  if (routeIndex >= 0 && routeIndex < count) return routeIndex
+  if (!canLoopDeck(count)) return Math.floor((count - 1) / 2)
+  return featuredIndex >= 0 && featuredIndex < count ? featuredIndex : 0
+}
+
 export function cardPose(rel: number, unit: number, intro = 1, maxAbs = 3.1): CardPose {
   const abs = Math.abs(rel)
   const clamped = Math.min(abs, maxAbs + 0.1)

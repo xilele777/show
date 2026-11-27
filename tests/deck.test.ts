@@ -3,6 +3,7 @@ import {
   canLoopDeck,
   cardPose,
   circularOffset,
+  initialDeckIndex,
   projectTarget,
   rubberBand,
   springStep,
@@ -51,6 +52,9 @@ describe('poster deck motion', () => {
     expect(canLoopDeck(6)).toBe(false)
     expect(canLoopDeck(8)).toBe(false)
     expect(canLoopDeck(9)).toBe(true)
+    expect(initialDeckIndex(6, -1, 0)).toBe(2)
+    expect(initialDeckIndex(6, 4, 0)).toBe(4)
+    expect(initialDeckIndex(10, -1, 1)).toBe(1)
   })
 })
 

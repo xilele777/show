@@ -10,6 +10,7 @@ import {
   circularOffset,
   clamp,
   easeOutExpo,
+  initialDeckIndex,
   projectTarget,
   rubberBand,
   springStep,
@@ -584,11 +585,15 @@ watch(
     if (!oldList || !oldList.length) {
       const fromRoute = list.findIndex((r) => r.id === route.query.record)
       const featured = list.findIndex((r) => r.featured)
-      index = fromRoute >= 0 ? fromRoute : featured >= 0 ? featured : 0
+      index = initialDeckIndex(list.length, fromRoute, featured)
     } else {
       const prevId = oldList[activeIndex.value]?.id
       index = prevId ? list.findIndex((r) => r.id === prevId) : -1
-      if (index < 0) index = Math.min(activeIndex.value, list.length - 1)
+      if (index < 0) {
+        index = canLoop.value
+          ? Math.min(activeIndex.value, list.length - 1)
+          : Math.floor((list.length - 1) / 2)
+      }
     }
     clearTimeout(wheelTimer)
     clearTimeout(glideTimer)
