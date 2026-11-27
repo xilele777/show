@@ -33,6 +33,8 @@ const swiping = ref(false)
 const wideMap = ref<Record<string, boolean>>({})
 
 const record = computed(() => visibleRecords.value.find((item) => item.id === route.query.record))
+const closingRecord = ref(record.value)
+const activeRecord = computed(() => record.value ?? closingRecord.value)
 const navList = computed(() => {
   const filtered = filterRecords(visibleRecords.value, readFilters(route.query))
   return filtered.some((item) => item.id === route.query.record) ? filtered : visibleRecords.value
@@ -47,12 +49,13 @@ const nextRecord = computed(() =>
     : undefined
 )
 const missing = computed(() => Boolean(route.query.record && !record.value && archive.value))
-const activeImage = computed(() => record.value?.images[photo.value])
+const activeImage = computed(() => activeRecord.value?.images[photo.value])
 const isWidePhoto = computed(() => (activeImage.value ? Boolean(wideMap.value[activeImage.value]) : false))
 const photoTransition = computed(() => (photoDir.value > 0 ? 'photo-next' : 'photo-prev'))
 const recordTransition = computed(() => (recordDir.value > 0 ? 'detail-next' : 'detail-prev'))
 
 let copyTimer: ReturnType<typeof setTimeout> | undefined
+let clearClosingTimer: ReturnType<typeof setTimeout> | undefined
 let cleanupDismiss: (() => void) | undefined
 let pendingPhoto: 'first' | 'last' = 'first'
 let wheelAccum = 0
@@ -102,24 +105,45 @@ watch(
 watch(
   record,
   async (value, oldValue) => {
-    const count = value?.images.length ?? 0
-    photo.value = pendingPhoto === 'last' && count > 0 ? count - 1 : 0
-    pendingPhoto = 'first'
-    swipeX.value = 0
-    copied.value = false
-    copyError.value = ''
-    if (value?.images.length) preloadImages(value.images)
-    await nextTick()
-    if (value && oldValue && value.id !== oldValue.id) {
-      contentEl.value?.scrollTo({ top: 0 })
-      dialog.value?.scrollTo({ top: 0 })
+    clearTimeout(clearClosingTimer)
+    if (value) {
+      closingRecord.value = value
+      const count = value.images.length
+      photo.value = pendingPhoto === 'last' && count > 0 ? count - 1 : 0
+      pendingPhoto = 'first'
+      swipeX.value = 0
+      copied.value = false
+      copyError.value = ''
+      if (count) preloadImages(value.images)
+      await nextTick()
+      if (oldValue && value.id !== oldValue.id) {
+        contentEl.value?.scrollTo({ top: 0 })
+        dialog.value?.scrollTo({ top: 0 })
+      }
+      if (dialog.value && !dialog.value.open) {
+        dialog.value.removeAttribute('data-closing')
+        dialog.value.showModal()
+      }
+      return
     }
-    if (value && dialog.value && !dialog.value.open) {
-      dialog.value.removeAttribute('data-closing')
-      dialog.value.showModal()
-    }
-    if (!value && dialog.value?.open) {
+
+    if (oldValue) closingRecord.value = oldValue
+    if (dialog.value?.open) {
       await closeTopLayer(dialog.value)
+    }
+    const animations = dialog.value?.getAnimations?.() ?? []
+    if (animations.length) {
+      await Promise.race([
+        Promise.allSettled(animations.map((a) => a.finished)),
+        new Promise<void>((resolve) => setTimeout(resolve, 480))
+      ])
+    } else {
+      await new Promise<void>((resolve) => {
+        clearClosingTimer = setTimeout(resolve, 420)
+      })
+    }
+    if (!record.value && !dialog.value?.open) {
+      closingRecord.value = undefined
     }
   },
   { immediate: true }
@@ -128,6 +152,7 @@ watch(
 onUnmounted(() => {
   cleanupDismiss?.()
   clearTimeout(copyTimer)
+  clearTimeout(clearClosingTimer)
   clearTimeout(wheelReset)
 })
 
@@ -279,7 +304,11 @@ async function copyLink() {
     @close="handleNativeClose"
     @keydown="onDialogKeydown"
   >
-    <div v-if="record" class="detail-shell" :class="{ 'detail-shell--single': !record.images.length }">
+    <div
+      v-if="activeRecord"
+      class="detail-shell"
+      :class="{ 'detail-shell--single': !activeRecord.images.length }"
+    >
       <div v-if="activeImage" class="detail-ambient" aria-hidden="true">
         <Transition name="photo-bg">
           <img :key="activeImage" :src="imageUrl(activeImage)" alt="" decoding="async" />
@@ -310,7 +339,7 @@ async function copyLink() {
       </div>
 
       <div
-        v-if="record.images.length"
+        v-if="activeRecord.images.length"
         ref="stageEl"
         class="detail-stage"
         :class="{ 'is-swiping': swiping, 'is-wide': isWidePhoto }"
@@ -337,10 +366,10 @@ async function copyLink() {
         <div class="detail-stage-track">
           <Transition :name="photoTransition">
             <img
-              :key="`${record.id}-${activeImage}`"
+              :key="`${activeRecord.id}-${activeImage}`"
               class="detail-stage-img"
               :src="imageUrl(activeImage!)"
-              :alt="`${record.title} · ${photo + 1}`"
+              :alt="`${activeRecord.title} · ${photo + 1}`"
               decoding="sync"
               draggable="false"
               @load="activeImage && recordImageAspect(activeImage, $event.target as HTMLImageElement)"
@@ -348,7 +377,7 @@ async function copyLink() {
           </Transition>
         </div>
 
-        <template v-if="record.images.length > 1">
+        <template v-if="activeRecord.images.length > 1">
           <button
             type="button"
             class="photo-prev icon-button"
@@ -367,7 +396,7 @@ async function copyLink() {
           </button>
           <div class="photo-dots" role="group" aria-label="切换图片">
             <button
-              v-for="(img, idx) in record.images"
+              v-for="(img, idx) in activeRecord.images"
               :key="img"
               type="button"
               class="photo-dot"
@@ -381,39 +410,44 @@ async function copyLink() {
 
       <div ref="contentEl" class="detail-content">
         <Transition :name="recordTransition" mode="out-in">
-          <div :key="record.id" class="detail-body">
+          <div :key="activeRecord.id" class="detail-body">
             <div class="detail-kicker">
-              <span class="detail-type-pill">{{ record.type }}</span>
+              <span class="detail-type-pill">{{ activeRecord.type }}</span>
               <span v-if="navList.length > 1" class="detail-counter">
                 {{ String(navIndex + 1).padStart(2, '0') }} / {{ String(navList.length).padStart(2, '0') }}
               </span>
             </div>
 
             <header class="detail-header">
-              <h1 id="record-title">{{ record.title }}</h1>
-              <p v-if="record.artist" class="detail-artist">{{ record.artist }}</p>
+              <h1 id="record-title">{{ activeRecord.title }}</h1>
+              <p v-if="activeRecord.artist" class="detail-artist">{{ activeRecord.artist }}</p>
             </header>
 
             <div class="detail-meta">
-              <span><CalendarDays :size="13" />{{ dateLabel(record.date) }}</span>
+              <span><CalendarDays :size="13" />{{ dateLabel(activeRecord.date) }}</span>
               <span>
-                <MapPin :size="13" />{{ record.city }}
-                <template v-if="record.venue"> · {{ record.venue }}</template>
+                <MapPin :size="13" />{{ activeRecord.city }}
+                <template v-if="activeRecord.venue"> · {{ activeRecord.venue }}</template>
               </span>
               <span
-                v-if="record.rating > 0"
+                v-if="activeRecord.rating > 0"
                 class="rating"
-                :aria-label="`评分 ${record.rating} / 5`"
+                :aria-label="`评分 ${activeRecord.rating} / 5`"
               >
-                <Star v-for="star in 5" :key="star" :size="12" :class="{ filled: star <= record.rating }" />
+                <Star
+                  v-for="star in 5"
+                  :key="star"
+                  :size="12"
+                  :class="{ filled: star <= activeRecord.rating }"
+                />
               </span>
             </div>
 
-            <p v-if="record.note" class="detail-note">{{ record.note }}</p>
+            <p v-if="activeRecord.note" class="detail-note">{{ activeRecord.note }}</p>
 
-            <div v-if="record.tags.length" class="tags">
+            <div v-if="activeRecord.tags.length" class="tags">
               <button
-                v-for="tag in record.tags"
+                v-for="tag in activeRecord.tags"
                 :key="tag"
                 type="button"
                 class="tag-chip"
@@ -423,10 +457,10 @@ async function copyLink() {
               </button>
             </div>
 
-            <section v-if="record.program.length" class="setlist-block">
+            <section v-if="activeRecord.program.length" class="setlist-block">
               <h2>曲目单</h2>
               <ol class="program">
-                <li v-for="(song, index) in record.program" :key="index">
+                <li v-for="(song, index) in activeRecord.program" :key="index">
                   <span>{{ String(index + 1).padStart(2, '0') }}</span>
                   {{ song }}
                 </li>
