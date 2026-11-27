@@ -15,22 +15,22 @@ dialog:modal {
 dialog::backdrop {
   overflow: hidden;
   overscroll-behavior: contain;
-  background-color: rgb(8 10 12 / 0);
+  background-color: rgb(6 7 10 / 0);
   backdrop-filter: blur(0px);
   transition-property: background-color, backdrop-filter, display, overlay;
-  transition-duration: 0.32s;
+  transition-duration: 0.36s;
   transition-timing-function: ease-out;
   transition-behavior: allow-discrete;
 }
 
 dialog[open]:where(:not([data-closing]))::backdrop {
-  background-color: rgb(8 10 12 / 0.68);
-  backdrop-filter: blur(10px);
+  background-color: rgb(6 7 10 / 0.74);
+  backdrop-filter: blur(16px);
 }
 
 @starting-style {
   dialog[open]:where(:not([data-closing]))::backdrop {
-    background-color: rgb(8 10 12 / 0);
+    background-color: rgb(6 7 10 / 0);
     backdrop-filter: blur(0px);
   }
 }
@@ -45,7 +45,7 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   box-shadow: var(--shadow-lg);
   opacity: 0;
   transition-property: opacity, transform, display, overlay;
-  transition-duration: 0.32s;
+  transition-duration: 0.36s;
   transition-timing-function: var(--ease-out-expo);
   transition-behavior: allow-discrete;
 }
@@ -54,7 +54,7 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   .record-dialog,
   .about-dialog,
   .confirm-dialog {
-    transform: translateY(16px) scale(0.96);
+    transform: translateY(14px) scale(0.95);
   }
 }
 
@@ -74,7 +74,7 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   }
   @starting-style {
     :is(.record-dialog[open], .about-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
-      transform: translateY(16px) scale(0.96);
+      transform: translateY(14px) scale(0.95);
     }
   }
 }
@@ -88,48 +88,112 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   }
 }
 
-/* ---------- Record Detail Dialog ---------- */
+/* ---------- Immersive Record Detail Dialog ---------- */
 .record-dialog {
-  width: min(1020px, calc(100vw - 32px));
-  max-height: min(88vh, 700px);
+  width: min(1080px, calc(100vw - 32px));
+  max-height: min(88vh, 720px);
   overflow: hidden;
   position: relative;
 }
 
 .detail-shell {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(300px, 43%) minmax(0, 1fr);
-  height: min(86vh, 680px);
+  grid-template-columns: minmax(340px, 50%) minmax(0, 1fr);
+  height: min(88vh, 720px);
+  isolation: isolate;
 }
 
 .detail-shell--single {
   grid-template-columns: 1fr;
   height: auto;
-  max-height: min(86vh, 680px);
+  max-height: min(88vh, 720px);
+}
+
+.detail-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  display: grid;
+}
+
+.detail-ambient img {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(84px) saturate(1.45);
+  opacity: 0.11;
+  transform: scale(1.2);
+}
+
+:root[data-theme='dark'] .detail-ambient img {
+  opacity: 0.2;
+}
+
+.dialog-floating-actions {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dialog-action-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--glass);
+  border-color: var(--line);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.dialog-action-btn.copied {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .detail-stage {
   position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  background: #0d0d10;
+  background: #09090b;
   overflow: hidden;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: 0;
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
 }
 
+/* Soft edge bleed melting the visual stage into the reading panel */
+.detail-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 76%, color-mix(in srgb, var(--surface) 88%, transparent) 100%),
+    linear-gradient(180deg, rgb(9 9 11 / 0.18) 0%, transparent 22%, transparent 74%, rgb(9 9 11 / 0.56) 100%);
+}
+
 .detail-stage-bg {
+  grid-area: 1 / 1;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: blur(42px) saturate(1.4) brightness(0.5);
-  transform: scale(1.18);
+  filter: blur(48px) saturate(1.5) brightness(0.56);
+  transform: scale(1.2);
   pointer-events: none;
 }
 
@@ -137,16 +201,18 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   grid-area: 1 / 1;
   position: relative;
   z-index: 1;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 12px;
-  box-shadow: 0 24px 60px rgb(0 0 0 / 0.55);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   transform: translate3d(var(--swipe-x, 0px), 0, 0);
   transition: transform 0.45s var(--ease-out-expo);
   pointer-events: none;
+}
+
+.detail-stage.is-wide .detail-stage-img {
+  object-fit: contain;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
 }
 
 .detail-stage.is-swiping .detail-stage-img {
@@ -154,55 +220,21 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 }
 
 .detail-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-.dialog-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 24px 12px;
-  background: linear-gradient(180deg, var(--surface) 78%, transparent 100%);
-}
-
-.dialog-topbar-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.detail-counter {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.dialog-topbar-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dialog-share-btn.copied {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
 .photo-bg-enter-active,
 .photo-bg-leave-active {
-  transition: opacity 0.6s ease;
+  transition: opacity 0.7s ease;
 }
 .photo-bg-enter-from,
 .photo-bg-leave-to {
@@ -212,59 +244,62 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 .photo-next-enter-active,
 .photo-prev-enter-active {
   transition:
-    opacity 0.36s ease,
-    transform 0.55s var(--ease-out-expo);
+    opacity 0.45s ease,
+    transform 0.6s var(--ease-out-expo);
 }
 .photo-next-leave-active,
 .photo-prev-leave-active {
   transition:
-    opacity 0.24s ease,
-    transform 0.32s ease-in;
+    opacity 0.28s ease,
+    transform 0.36s ease-in;
 }
 .photo-next-enter-from {
   opacity: 0;
-  transform: translate3d(16%, 0, 0) scale(0.98);
+  transform: translate3d(10%, 0, 0) scale(1.04);
 }
 .photo-next-leave-to {
   opacity: 0;
-  transform: translate3d(-16%, 0, 0) scale(0.98);
+  transform: translate3d(-8%, 0, 0) scale(0.98);
 }
 .photo-prev-enter-from {
   opacity: 0;
-  transform: translate3d(-16%, 0, 0) scale(0.98);
+  transform: translate3d(-10%, 0, 0) scale(1.04);
 }
 .photo-prev-leave-to {
   opacity: 0;
-  transform: translate3d(16%, 0, 0) scale(0.98);
+  transform: translate3d(8%, 0, 0) scale(0.98);
 }
 
 .detail-next-enter-active,
 .detail-prev-enter-active {
   transition:
-    opacity 0.3s ease,
-    transform 0.42s var(--ease-out-expo);
+    opacity 0.34s ease,
+    transform 0.48s var(--ease-out-expo),
+    filter 0.34s ease;
 }
 .detail-next-leave-active,
 .detail-prev-leave-active {
   transition:
-    opacity 0.14s ease,
-    transform 0.16s ease-in;
+    opacity 0.16s ease,
+    transform 0.18s ease-in;
 }
 .detail-next-enter-from {
   opacity: 0;
-  transform: translateX(18px);
+  transform: translateY(10px);
+  filter: blur(4px);
 }
 .detail-next-leave-to {
   opacity: 0;
-  transform: translateX(-10px);
+  transform: translateY(-6px);
 }
 .detail-prev-enter-from {
   opacity: 0;
-  transform: translateX(-18px);
+  transform: translateY(-10px);
+  filter: blur(4px);
 }
 .detail-prev-leave-to {
   opacity: 0;
-  transform: translateX(10px);
+  transform: translateY(6px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -277,6 +312,7 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   .detail-prev-enter-from,
   .detail-prev-leave-to {
     transform: none;
+    filter: none;
   }
 }
 
@@ -285,12 +321,30 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 3;
+  z-index: 4;
+  width: 36px;
+  height: 36px;
+  background: rgb(9 9 11 / 0.44);
+  border-color: rgb(255 255 255 / 0.18);
+  color: #fff;
+  opacity: 0.72;
+  transition:
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.25s var(--ease-out-expo);
+}
+
+.detail-stage:hover .photo-prev,
+.detail-stage:hover .photo-next,
+.photo-prev:focus-visible,
+.photo-next:focus-visible {
+  opacity: 1;
 }
 
 .photo-prev:hover:not(:disabled),
 .photo-next:hover:not(:disabled) {
-  transform: translateY(-50%) scale(1.06);
+  background: rgb(9 9 11 / 0.72);
+  transform: translateY(-50%) scale(1.08);
 }
 
 .photo-prev {
@@ -298,30 +352,31 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 }
 
 .photo-next {
-  right: 14px;
+  right: 16px;
 }
 
 .photo-dots {
   position: absolute;
-  bottom: 14px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 3;
+  z-index: 4;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgb(9 9 11 / 0.65);
-  backdrop-filter: blur(10px);
+  background: rgb(9 9 11 / 0.5);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(12px);
 }
 
 .photo-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: rgb(255 255 255 / 0.42);
-  transition: width 0.25s var(--ease-out-expo), background-color 0.2s ease;
+  transition: width 0.28s var(--ease-out-expo), background-color 0.2s ease;
 }
 
 .photo-dot.active {
@@ -332,16 +387,17 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 
 .detail-body {
   flex: 1;
-  padding: 4px 28px 24px;
+  padding: 34px 36px 26px;
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.detail-header {
+.detail-kicker {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+  padding-right: 88px;
 }
 
 .detail-type-pill {
@@ -353,11 +409,23 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   font-weight: 600;
 }
 
+.detail-counter {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .detail-body h1 {
-  font-size: clamp(22px, 2.4vw, 28px);
+  font-size: clamp(23px, 2.5vw, 30px);
   font-weight: 700;
-  line-height: 1.28;
-  letter-spacing: -0.02em;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
   color: var(--ink);
 }
 
@@ -372,33 +440,28 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
-  font-size: 13px;
-  color: var(--ink-soft);
+  font-size: 12.5px;
+  color: var(--muted);
 }
 
 .detail-meta > span {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-}
-
-.detail-meta svg {
-  color: var(--muted);
+  gap: 5px;
 }
 
 .detail-note {
   font-size: 14.5px;
-  line-height: 1.85;
+  line-height: 1.88;
   color: var(--ink-soft);
   white-space: pre-line;
+  padding-top: 6px;
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 7px;
 }
 
 .tag-chip {
@@ -406,7 +469,7 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   border-radius: 999px;
   background: var(--surface-soft);
   border: 1px solid var(--line);
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--ink-soft);
   transition: border-color 0.2s ease, color 0.2s ease;
 }
@@ -416,21 +479,17 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   color: var(--accent);
 }
 
-.setlist-card {
-  padding: 16px 18px;
-  border-radius: var(--radius-md);
-  background: var(--canvas);
-  border: 1px solid var(--line);
+.setlist-block {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 
-.setlist-card h2 {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+.setlist-block h2 {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
   margin-bottom: 10px;
 }
 
@@ -439,22 +498,16 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .program li {
   display: flex;
   align-items: baseline;
   gap: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed var(--line);
   font-size: 13px;
-  line-height: 1.5;
-}
-
-.program li:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
+  line-height: 1.55;
+  color: var(--ink-soft);
 }
 
 .program li span {
@@ -465,16 +518,13 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 }
 
 .detail-footer {
-  position: sticky;
-  bottom: 0;
   margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 24px;
+  padding: 14px 28px 18px;
   border-top: 1px solid var(--line);
-  background: var(--surface);
 }
 
 .detail-footer-nav {
@@ -625,12 +675,27 @@ dialog[open]:where(:not([data-closing]))::backdrop {
     height: auto;
   }
   .detail-stage {
-    height: min(52vh, 420px);
+    height: min(54vh, 440px);
+  }
+  .detail-stage::after {
+    background: linear-gradient(
+      180deg,
+      rgb(9 9 11 / 0.25) 0%,
+      transparent 28%,
+      transparent 66%,
+      var(--surface) 100%
+    );
   }
   .detail-content {
     overflow-y: visible;
   }
   .detail-body {
-    padding: 4px 20px 20px;
+    padding: 18px 22px 22px;
+  }
+  .detail-kicker {
+    padding-right: 0;
+  }
+  .detail-footer {
+    padding: 12px 20px 16px;
   }
 }

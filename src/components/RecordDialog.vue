@@ -10,7 +10,6 @@ import {
   Star,
   Copy,
   Check,
-  Music2,
   ArrowLeft,
   ArrowRight
 } from 'lucide-vue-next'
@@ -31,6 +30,7 @@ const copied = ref(false)
 const copyError = ref('')
 const swipeX = ref(0)
 const swiping = ref(false)
+const isWidePhoto = ref(false)
 
 const record = computed(() => visibleRecords.value.find((item) => item.id === route.query.record))
 const navList = computed(() => {
@@ -47,6 +47,7 @@ const nextRecord = computed(() =>
     : undefined
 )
 const missing = computed(() => Boolean(route.query.record && !record.value && archive.value))
+const activeImage = computed(() => record.value?.images[photo.value])
 const photoTransition = computed(() => (photoDir.value > 0 ? 'photo-next' : 'photo-prev'))
 const recordTransition = computed(() => (recordDir.value > 0 ? 'detail-next' : 'detail-prev'))
 
@@ -75,6 +76,12 @@ function handleNativeClose() {
   clearRecordQuery()
 }
 
+function onPhotoLoad(event: Event) {
+  const img = event.target as HTMLImageElement | null
+  if (!img || !img.naturalHeight) return
+  isWidePhoto.value = img.naturalWidth / img.naturalHeight > 1.28
+}
+
 watch(
   dialog,
   (el) => {
@@ -83,6 +90,10 @@ watch(
   },
   { immediate: true }
 )
+
+watch(activeImage, () => {
+  isWidePhoto.value = false
+})
 
 watch(
   record,
@@ -93,6 +104,7 @@ watch(
     swipeX.value = 0
     copied.value = false
     copyError.value = ''
+    isWidePhoto.value = false
     await nextTick()
     if (value && oldValue && value.id !== oldValue.id) {
       contentEl.value?.scrollTo({ top: 0 })
@@ -264,11 +276,40 @@ async function copyLink() {
     @keydown="onDialogKeydown"
   >
     <div v-if="record" class="detail-shell" :class="{ 'detail-shell--single': !record.images.length }">
+      <div v-if="activeImage" class="detail-ambient" aria-hidden="true">
+        <Transition name="photo-bg">
+          <img :key="activeImage" :src="imageUrl(activeImage)" alt="" decoding="async" />
+        </Transition>
+      </div>
+
+      <div class="dialog-floating-actions">
+        <button
+          type="button"
+          class="icon-button dialog-action-btn"
+          :class="{ copied }"
+          :aria-label="copied ? '已复制分享链接' : '复制分享链接'"
+          :title="copied ? '已复制链接' : '复制链接'"
+          @click="copyLink"
+        >
+          <Check v-if="copied" :size="15" />
+          <Copy v-else :size="15" />
+        </button>
+        <button
+          type="button"
+          class="icon-button dialog-action-btn"
+          aria-label="关闭"
+          autofocus
+          @click="requestClose"
+        >
+          <X :size="18" />
+        </button>
+      </div>
+
       <div
         v-if="record.images.length"
         ref="stageEl"
         class="detail-stage"
-        :class="{ 'is-swiping': swiping }"
+        :class="{ 'is-swiping': swiping, 'is-wide': isWidePhoto }"
         :style="{ '--swipe-x': `${swipeX}px` }"
         tabindex="0"
         aria-label="现场海报与照片浏览"
@@ -280,9 +321,9 @@ async function copyLink() {
       >
         <Transition name="photo-bg">
           <img
-            :key="record.images[photo]"
+            :key="activeImage"
             class="detail-stage-bg"
-            :src="imageUrl(record.images[photo]!)"
+            :src="imageUrl(activeImage!)"
             alt=""
             aria-hidden="true"
             decoding="async"
@@ -291,12 +332,13 @@ async function copyLink() {
 
         <Transition :name="photoTransition">
           <img
-            :key="`${record.id}-${record.images[photo]}`"
+            :key="`${record.id}-${activeImage}`"
             class="detail-stage-img"
-            :src="imageUrl(record.images[photo]!)"
+            :src="imageUrl(activeImage!)"
             :alt="`${record.title} · ${photo + 1}`"
             decoding="async"
             draggable="false"
+            @load="onPhotoLoad"
           />
         </Transition>
 
@@ -332,49 +374,24 @@ async function copyLink() {
       </div>
 
       <div ref="contentEl" class="detail-content">
-        <div class="dialog-topbar">
-          <div class="dialog-topbar-meta">
-            <span class="detail-type-pill">{{ record.type }}</span>
-            <span v-if="navList.length > 1" class="detail-counter">
-              {{ String(navIndex + 1).padStart(2, '0') }} / {{ String(navList.length).padStart(2, '0') }}
-            </span>
-          </div>
-
-          <div class="dialog-topbar-actions">
-            <button
-              type="button"
-              class="icon-button dialog-share-btn"
-              :class="{ copied }"
-              :aria-label="copied ? '已复制分享链接' : '复制分享链接'"
-              :title="copied ? '已复制链接' : '复制链接'"
-              @click="copyLink"
-            >
-              <Check v-if="copied" :size="15" />
-              <Copy v-else :size="15" />
-            </button>
-            <button
-              type="button"
-              class="icon-button"
-              aria-label="关闭"
-              autofocus
-              @click="requestClose"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-        </div>
-
         <Transition :name="recordTransition" mode="out-in">
           <div :key="record.id" class="detail-body">
-            <div class="detail-header">
-              <h1 id="record-title">{{ record.title }}</h1>
-              <p v-if="record.artist" class="detail-artist">{{ record.artist }}</p>
+            <div class="detail-kicker">
+              <span class="detail-type-pill">{{ record.type }}</span>
+              <span v-if="navList.length > 1" class="detail-counter">
+                {{ String(navIndex + 1).padStart(2, '0') }} / {{ String(navList.length).padStart(2, '0') }}
+              </span>
             </div>
 
+            <header class="detail-header">
+              <h1 id="record-title">{{ record.title }}</h1>
+              <p v-if="record.artist" class="detail-artist">{{ record.artist }}</p>
+            </header>
+
             <div class="detail-meta">
-              <span><CalendarDays :size="14" />{{ dateLabel(record.date) }}</span>
+              <span><CalendarDays :size="13" />{{ dateLabel(record.date) }}</span>
               <span>
-                <MapPin :size="14" />{{ record.city }}
+                <MapPin :size="13" />{{ record.city }}
                 <template v-if="record.venue"> · {{ record.venue }}</template>
               </span>
               <span
@@ -382,7 +399,7 @@ async function copyLink() {
                 class="rating"
                 :aria-label="`评分 ${record.rating} / 5`"
               >
-                <Star v-for="star in 5" :key="star" :size="13" :class="{ filled: star <= record.rating }" />
+                <Star v-for="star in 5" :key="star" :size="12" :class="{ filled: star <= record.rating }" />
               </span>
             </div>
 
@@ -400,8 +417,8 @@ async function copyLink() {
               </button>
             </div>
 
-            <section v-if="record.program.length" class="setlist-card">
-              <h2><Music2 :size="14" />曲目单</h2>
+            <section v-if="record.program.length" class="setlist-block">
+              <h2>曲目单</h2>
               <ol class="program">
                 <li v-for="(song, index) in record.program" :key="index">
                   <span>{{ String(index + 1).padStart(2, '0') }}</span>
