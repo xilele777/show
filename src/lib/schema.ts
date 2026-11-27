@@ -153,6 +153,12 @@ export function dateLabel(date: string): string {
   )
 }
 
+export function formatPriceLabel(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  return /^\d+(\.\d+)?$/.test(trimmed) ? `¥${trimmed}` : trimmed
+}
+
 export function assetUrl(path: string): string {
   if (/^https:\/\//i.test(path)) return path
   return `${import.meta.env.BASE_URL}${path}`

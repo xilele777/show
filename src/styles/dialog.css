@@ -16,15 +16,15 @@ dialog::backdrop {
   overflow: hidden;
   overscroll-behavior: contain;
   background-color: rgb(6 7 10 / 0);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
   transition-property: background-color, display, overlay;
-  transition-duration: 0.32s;
+  transition-duration: 0.2s;
   transition-timing-function: ease-out;
   transition-behavior: allow-discrete;
 }
 
 dialog[open]:where(:not([data-closing]))::backdrop {
-  background-color: rgb(6 7 10 / 0.72);
+  background-color: rgb(6 7 10 / 0.7);
 }
 
 @starting-style {
@@ -34,7 +34,6 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 }
 
 .record-dialog,
-.about-dialog,
 .confirm-dialog {
   margin: auto;
   border-radius: var(--radius-lg);
@@ -43,46 +42,44 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   box-shadow: var(--shadow-lg);
   opacity: 0;
   transition-property: opacity, transform, display, overlay;
-  transition-duration: 0.36s;
+  transition-duration: 0.2s;
   transition-timing-function: var(--ease-out-expo);
   transition-behavior: allow-discrete;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .record-dialog,
-  .about-dialog,
   .confirm-dialog {
-    transform: translateY(14px) scale(0.95);
+    transform: translateY(6px);
   }
 }
 
-:is(.record-dialog[open], .about-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
+:is(.record-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
   opacity: 1;
 }
 
 @starting-style {
-  :is(.record-dialog[open], .about-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
+  :is(.record-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
     opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :is(.record-dialog[open], .about-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
-    transform: translateY(0) scale(1);
+  :is(.record-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
+    transform: translateY(0);
   }
   @starting-style {
-    :is(.record-dialog[open], .about-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
-      transform: translateY(14px) scale(0.95);
+    :is(.record-dialog[open], .confirm-dialog[open]):where(:not([data-closing])) {
+      transform: translateY(6px);
     }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .record-dialog,
-  .about-dialog,
   .confirm-dialog,
   dialog::backdrop {
-    transition-duration: 0.12s;
+    transition-duration: 0.1s;
   }
 }
 
@@ -402,10 +399,10 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 
 .detail-body {
   flex: 1;
-  padding: 34px 36px 26px;
+  padding: 36px 38px 28px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .detail-kicker {
@@ -415,25 +412,33 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   padding-right: 88px;
 }
 
-.detail-type-pill {
-  padding: 4px 11px;
-  border-radius: 999px;
-  background: var(--cat-soft, var(--accent-soft));
-  color: var(--cat-color, var(--accent));
+.detail-type-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--cat-color, var(--accent));
 }
 
-:root[data-theme='dark'] .detail-type-pill {
+:root[data-theme='dark'] .detail-type-label {
   color: var(--cat-color-dark, var(--cat-color, var(--accent)));
 }
 
+.detail-type-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .detail-upcoming-pill {
-  padding: 4px 10px;
+  padding: 2px 9px;
   border-radius: 999px;
   background: var(--glow-soft);
   color: #b45309;
-  border: 1px solid color-mix(in srgb, var(--glow) 38%, transparent);
   font-size: 11px;
   font-weight: 600;
 }
@@ -442,104 +447,35 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   color: var(--glow);
 }
 
-.detail-counter {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-}
-
 .detail-header {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
 }
 
 .detail-body h1 {
   font-size: clamp(23px, 2.5vw, 30px);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.24;
   letter-spacing: -0.025em;
   color: var(--ink);
 }
 
-.detail-artist {
+.detail-subtitle {
   font-size: 14px;
   font-weight: 500;
-  color: var(--muted);
-}
-
-/* Structured Credits (Orchestra / Conductor / Soloists) */
-.detail-credits {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  background: var(--surface-soft);
-  border-left: 3px solid var(--cat-color, var(--accent));
-}
-
-:root[data-theme='dark'] .detail-credits {
-  border-left-color: var(--cat-color-dark, var(--cat-color, var(--accent)));
-}
-
-.credit-item {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-size: 13px;
-}
-
-.credit-item > span {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--muted);
-  flex-shrink: 0;
-  min-width: 30px;
-}
-
-.credit-item strong {
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.soloist-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.soloist-chips em {
-  font-style: normal;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 2px 9px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  color: var(--ink);
-}
-
-.credit-subline {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* Ticket & Venue Stub */
-.detail-stub {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 14px;
-  border-bottom: 1px dashed var(--line-strong);
+  color: var(--ink-soft);
+  line-height: 1.5;
 }
 
 .detail-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
+  gap: 6px 16px;
+  margin-top: 2px;
   font-size: 12.5px;
   color: var(--muted);
 }
@@ -550,33 +486,32 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   gap: 5px;
 }
 
-.detail-ticket-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
+/* Editorial Programme Credits & Seating Facts */
+.detail-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  row-gap: 10px;
+  column-gap: 14px;
+  align-items: baseline;
+  font-size: 13.5px;
+  line-height: 1.65;
 }
 
-.ticket-chip {
+.detail-facts dt {
   font-family: var(--mono);
   font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 6px;
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.04em;
 }
 
-.ticket-chip--price {
-  color: var(--cat-color, var(--accent));
-  background: var(--cat-soft, var(--accent-soft));
-  border-color: transparent;
-  font-weight: 600;
-}
-
-:root[data-theme='dark'] .ticket-chip--price {
-  color: var(--cat-color-dark, var(--cat-color, var(--accent)));
+.detail-facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .detail-note {
@@ -584,38 +519,33 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   line-height: 1.88;
   color: var(--ink-soft);
   white-space: pre-line;
-  padding-top: 2px;
+  padding-top: 4px;
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px 12px;
+  padding-top: 4px;
 }
 
 .tag-chip {
-  padding: 4px 11px;
-  border-radius: 999px;
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  font-size: 11.5px;
-  color: var(--ink-soft);
-  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+  padding: 2px 0;
+  font-size: 12px;
+  color: var(--muted);
+  transition: color 0.2s ease;
 }
 
 .tag-chip:hover {
-  border-color: var(--cat-color, var(--accent));
   color: var(--cat-color, var(--accent));
-  background: var(--cat-soft, var(--accent-soft));
 }
 
 :root[data-theme='dark'] .tag-chip:hover {
-  border-color: var(--cat-color-dark, var(--accent));
   color: var(--cat-color-dark, var(--accent));
 }
 
 .setlist-block {
-  padding-top: 14px;
+  padding-top: 16px;
   border-top: 1px solid var(--line);
 }
 
@@ -631,23 +561,19 @@ dialog[open]:where(:not([data-closing]))::backdrop {
 .setlist-groups {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
-.setlist-half-badge {
-  display: inline-block;
+.setlist-half-heading {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  padding: 2px 9px;
-  border-radius: 999px;
-  background: var(--cat-soft, var(--accent-soft));
   color: var(--cat-color, var(--accent));
   margin-bottom: 8px;
 }
 
-:root[data-theme='dark'] .setlist-half-badge {
+:root[data-theme='dark'] .setlist-half-heading {
   color: var(--cat-color-dark, var(--cat-color, var(--accent)));
 }
 
@@ -739,85 +665,6 @@ dialog[open]:where(:not([data-closing]))::backdrop {
   font-size: 11px;
   color: var(--accent);
   line-height: 1.6;
-}
-
-/* ---------- About Dialog ---------- */
-.about-dialog {
-  width: min(520px, calc(100vw - 32px));
-  padding: 28px 30px;
-  position: relative;
-}
-
-.about-dialog-close {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-}
-
-.about-dialog-head {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding-right: 44px;
-  margin-bottom: 16px;
-}
-
-.mini-vinyl {
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: repeating-radial-gradient(circle at center, #14161a 0 2.5px, #242830 3px 4px);
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow-sm);
-}
-
-.mini-vinyl span {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--glow));
-  color: #fff;
-  display: grid;
-  place-items: center;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .about-dialog[open] .mini-vinyl {
-    animation: vinyl-spin 12s linear infinite;
-  }
-}
-
-@keyframes vinyl-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.about-dialog h1 {
-  font-family: var(--serif);
-  font-size: 24px;
-}
-
-.about-owner {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-.about-tagline {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  margin-bottom: 10px;
-}
-
-.about-bio {
-  font-size: 13.5px;
-  line-height: 1.85;
-  color: var(--ink-soft);
-  white-space: pre-line;
 }
 
 /* ---------- Confirm Dialog ---------- */
