@@ -52,6 +52,7 @@ const emit = defineEmits<{
 
 const draft = ref<ConcertRecord>(JSON.parse(JSON.stringify(props.record)))
 const programItems = ref<ProgramItem[]>([])
+const performerDrafts = ref(new Map<ProgramItem, string>())
 const initialSnapshot = ref('')
 
 const soloistInput = ref('')
@@ -167,6 +168,7 @@ watch(
     cloned.status = cloned.status ?? 'watched'
     draft.value = cloned
     programItems.value = (cloned.program ?? []).map(normalizeProgramItem)
+    performerDrafts.value.clear()
     parseDateParts(cloned.date)
     initialSnapshot.value = snapshot()
   },
@@ -174,6 +176,7 @@ watch(
 )
 
 const isDirty = computed(() => snapshot() !== initialSnapshot.value)
+const hasPendingChipText = computed(() => Boolean(soloistInput.value.trim() || tagInput.value.trim()))
 
 function markClean() {
   initialSnapshot.value = snapshot()
@@ -249,6 +252,20 @@ function moveProgramItem(index: number, delta: -1 | 1) {
   if (next < 0 || next >= programItems.value.length) return
   const [item] = programItems.value.splice(index, 1)
   if (item) programItems.value.splice(next, 0, item)
+}
+
+function performerValue(item: ProgramItem): string {
+  return performerDrafts.value.get(item) ?? item.performers.join('、')
+}
+
+function onPerformersInput(item: ProgramItem, event: Event) {
+  const raw = (event.target as HTMLInputElement).value
+  performerDrafts.value.set(item, raw)
+  item.performers = splitPerformerNames(raw)
+}
+
+function onPerformersBlur(item: ProgramItem) {
+  performerDrafts.value.delete(item)
 }
 
 function importBatchProgram() {
@@ -387,7 +404,7 @@ function submit() {
         </button>
         <div>
           <h2>{{ isNew ? '新增记录' : draft.title || '编辑记录' }}</h2>
-          <p v-if="isDirty" class="unsaved-hint">有未保存的表单修改</p>
+          <p v-if="isDirty || hasPendingChipText" class="unsaved-hint">有未保存的表单修改</p>
         </div>
       </div>
 
@@ -424,7 +441,11 @@ function submit() {
             <Trash2 :size="15" />
           </button>
         </template>
-        <button class="button small" type="submit" :disabled="busy || (!isNew && !isDirty)">
+        <button
+          class="button small"
+          type="submit"
+          :disabled="busy || (!isNew && !isDirty && !hasPendingChipText)"
+        >
           <Save :size="14" />保存草稿
         </button>
       </div>
@@ -892,10 +913,11 @@ function submit() {
                 演唱 / 演奏者
                 <input
                   :id="`program-performers-${index}`"
-                  :value="item.performers.join('、')"
+                  :value="performerValue(item)"
                   maxlength="2400"
                   placeholder="多位姓名用顿号或逗号分隔"
-                  @change="item.performers = splitPerformerNames(($event.target as HTMLInputElement).value)"
+                  @input="onPerformersInput(item, $event)"
+                  @blur="onPerformersBlur(item)"
                 />
               </label>
             </div>
