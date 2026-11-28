@@ -166,10 +166,10 @@
       "conductor": "亚历山大・索洛维耶夫",
       "soloists": [],
       "date": "2026-11-18",
-      "time": "",
+      "time": "19:30",
       "city": "长沙",
       "venue": "长沙音乐厅・湘江大厅",
-      "seat": "",
+      "seat": "1-7-37",
       "price": "赠票",
       "status": "watched",
       "type": "sing",
@@ -507,7 +507,7 @@
         "方琼"
       ],
       "date": "2026-11-06",
-      "time": "",
+      "time": "19:30",
       "city": "长沙",
       "venue": "长沙音乐厅湘江大厅",
       "seat": "1楼13排21座",
@@ -1023,7 +1023,7 @@
       "time": "19:30",
       "city": "长沙",
       "venue": "长沙音乐厅·湘江大厅",
-      "seat": "",
+      "seat": "1-17-20",
       "price": "30元",
       "status": "watched",
       "type": "sing",
@@ -1402,7 +1402,7 @@
         }
       ],
       "images": [
-        "https://concshow-images.2519175810.workers.dev/uploads/e1b19cd4-c617-4564-a7b8-3e5b26ee6f62.webp"
+        "uploads/e1b19cd4-c617-4564-a7b8-3e5b26ee6f62.webp"
       ],
       "featured": false,
       "published": true,
@@ -1418,10 +1418,10 @@
       "conductor": "",
       "soloists": [],
       "date": "2026-10-28",
-      "time": "",
+      "time": "19:30",
       "city": "长沙",
       "venue": "梅溪湖国际艺术中心大剧院",
-      "seat": "",
+      "seat": "1-13-47",
       "price": "60元",
       "status": "watched",
       "type": "话剧",
@@ -1432,7 +1432,148 @@
       ],
       "program": [],
       "images": [
-        "https://concshow-images.2519175810.workers.dev/uploads/b2023364-b4cf-4c24-afe2-993658d73a4e.webp"
+        "uploads/b2023364-b4cf-4c24-afe2-993658d73a4e.webp"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": false
+    },
+    {
+      "id": "a9d5093b-e3f7-4856-9750-e210830dbfd2",
+      "title": "民族歌剧《江姐》",
+      "subtitle": "",
+      "artist": "",
+      "cast": [],
+      "orchestra": "",
+      "conductor": "",
+      "soloists": [],
+      "date": "2026-10-09",
+      "time": "19:30",
+      "city": "长沙",
+      "venue": "梅溪湖国际文化艺术中心大剧院",
+      "seat": "1-22-1",
+      "price": "30",
+      "status": "watched",
+      "type": "歌剧",
+      "rating": 3,
+      "note": "",
+      "tags": [
+        "歌剧"
+      ],
+      "program": [
+        {
+          "title": "歌剧《江姐》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": []
+        }
+      ],
+      "images": [
+        "https://concshow-images.2519175810.workers.dev/uploads/22bc41f5-e98d-4368-904e-c9e253cb0025.webp"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": false
+    },
+    {
+      "id": "ab776306-4793-41a9-9841-8f76dbbb6a12",
+      "title": "《古韵新声》国家艺术基金项目汇报音乐会",
+      "subtitle": "",
+      "artist": "",
+      "cast": [],
+      "orchestra": "湖南民族乐团等",
+      "conductor": "马帅",
+      "soloists": [],
+      "date": "2026-09-12",
+      "time": "15:00",
+      "city": "长沙",
+      "venue": "长沙音乐厅麓山中厅",
+      "seat": "1-6-23",
+      "price": "赠票",
+      "status": "watched",
+      "type": "民族音乐会",
+      "rating": 5,
+      "note": "",
+      "tags": [
+        "王云飞"
+      ],
+      "program": [],
+      "images": [
+        "https://concshow-images.2519175810.workers.dev/uploads/651ad5ba-5d50-438d-8a65-b3937517d583.webp"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": false
+    },
+    {
+      "id": "8fb9e553-64ff-4b5b-b1e1-a86122cb70ba",
+      "title": "《北欧极光》交响音乐会",
+      "subtitle": "",
+      "artist": "",
+      "cast": [],
+      "orchestra": "长沙交响乐团",
+      "conductor": "张国勇",
+      "soloists": [
+        "章奥哲"
+      ],
+      "date": "2026-09-04",
+      "time": "19:30",
+      "city": "长沙",
+      "venue": "长沙音乐厅湘江大厅",
+      "seat": "1-14-25",
+      "price": "120",
+      "status": "watched",
+      "type": "交响音乐会",
+      "rating": 5,
+      "note": "",
+      "tags": [
+        "张国勇",
+        "西贝柳斯"
+      ],
+      "program": [
+        {
+          "title": "《忧郁圆舞曲》作品44号",
+          "composer": "西贝柳斯",
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": []
+        },
+        {
+          "title": "《D小调小提琴协奏曲》作品47号",
+          "composer": "西贝柳斯",
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "章奥哲"
+          ]
+        },
+        {
+          "title": "《D大调第二交响曲》作品43号",
+          "composer": "西贝柳斯",
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": []
+        }
+      ],
+      "images": [
+        "https://concshow-images.2519175810.workers.dev/uploads/6ead0bd3-9460-444e-8692-cd4ff60824c5.webp"
       ],
       "featured": false,
       "published": true,
