@@ -1578,6 +1578,263 @@
       "featured": false,
       "published": true,
       "demo": false
+    },
+    {
+      "id": "2e57f8c1-17ea-4e07-a54b-4170e1121fee",
+      "title": "笙歌唢韵 音乐会",
+      "subtitle": "",
+      "artist": "",
+      "cast": [],
+      "orchestra": "",
+      "conductor": "",
+      "soloists": [
+        "王思雨",
+        "谢玮璐",
+        "李璨"
+      ],
+      "date": "2026-12-06",
+      "time": "19:30",
+      "city": "长沙",
+      "venue": "长沙音乐厅湘江大厅",
+      "seat": "1-3-24",
+      "price": "11.1",
+      "status": "upcoming",
+      "type": "民族音乐会",
+      "rating": 0,
+      "note": "",
+      "tags": [
+        "笙唢"
+      ],
+      "program": [
+        {
+          "title": "《抬花轿》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "唢呐：王思雨",
+            "笙：谢玮璐"
+          ]
+        },
+        {
+          "title": "《冬猎》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "笙：谢玮璐",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《知道不知道》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "唢呐：王思雨",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《赶牲灵》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "唢呐：王思雨",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《草原骑兵》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "笙：谢玮璐",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《天鹅畅想曲》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "笙：谢玮璐",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《恣逸》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "唢呐：王思雨",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《彝寨欢歌》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "笙：谢玮璐",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《青玉案元夕》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "唢呐：王思雨",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《太行乡情》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "笙：谢玮璐",
+            "钢琴：李璨"
+          ]
+        },
+        {
+          "title": "《百鸟朝凤》",
+          "composer": "",
+          "half": "",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "唢呐：王思雨",
+            "笙：谢玮璐"
+          ]
+        }
+      ],
+      "images": [
+        "https://concshow-images.2519175810.workers.dev/uploads/94c8804f-5835-4f0a-a089-7e4d22f230d6.webp"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": false
+    },
+    {
+      "id": "66ce9a79-837e-4825-8554-d4428234edd1",
+      "title": "俄罗斯新西伯利亚爱乐乐团  新年音乐会",
+      "subtitle": "",
+      "artist": "",
+      "cast": [],
+      "orchestra": "俄罗斯新西伯利亚爱乐乐团",
+      "conductor": "李昊冉",
+      "soloists": [
+        "沈妤霖"
+      ],
+      "date": "2026-12-31",
+      "time": "19:00",
+      "city": "长沙",
+      "venue": "长沙音乐厅湘江大厅",
+      "seat": "2-4-27",
+      "price": "",
+      "status": "upcoming",
+      "type": "交响音乐会",
+      "rating": 0,
+      "note": "",
+      "tags": [
+        "肖斯塔科维奇"
+      ],
+      "program": [
+        {
+          "title": "《叶甫盖尼·奥涅金》波兰舞曲",
+          "composer": "柴可夫斯基",
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": []
+        },
+        {
+          "title": "《帕格尼尼主题狂想曲》",
+          "composer": "拉赫玛尼诺夫",
+          "half": "上半场",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": [
+            "沈妤霖"
+          ]
+        },
+        {
+          "title": "《D小调第五交响曲》",
+          "composer": "肖斯塔科维奇",
+          "half": "下半场",
+          "source": "",
+          "lyricist": "",
+          "section": "",
+          "credits": [],
+          "description": "",
+          "performers": []
+        }
+      ],
+      "images": [
+        "https://concshow-images.2519175810.workers.dev/uploads/e8f64651-af40-411b-bcff-dd38a1288749.webp"
+      ],
+      "featured": false,
+      "published": true,
+      "demo": false
     }
   ]
 }
